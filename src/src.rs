@@ -83,10 +83,6 @@ fn op_mul(pc: &mut Interpreter) {
     pc.ip += 4;
 }
 
-fn huehue() {
-    let stdin = io::stdin();       
-}
-
 fn op_in(pc: &mut Interpreter) {
     println!("GET USER INPUT:");
     let mut input = String::new();
