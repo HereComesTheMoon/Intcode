@@ -1,9 +1,10 @@
 use std::io;
+use std::process;
 
 pub type VALUE = i64;
 
-#[derive(Debug)]
-pub struct Interpreter {
+//#[derive(Debug)]
+pub struct Interpreter<'a> {
     /// The underlying code of the program.
     pub code: Vec<VALUE>,
     /// The instruction pointer.
@@ -16,12 +17,21 @@ pub struct Interpreter {
     pub param_indices: Vec<usize>,
     /// Indicates whether the program is finished.
     pub finish: bool,
+    pub output_stream: Box<dyn io::Write + 'a>,
+    pub input_stream: Box<dyn io::BufRead + 'a>,
+    //pub output_stream: &'a dyn io::Write,
+}
+
+impl<'a> Default for Interpreter<'a> {
+    fn default() -> Interpreter<'a> {
+        Interpreter { code: vec![], ip: 0, param_indices: vec![], finish: false, input_stream: Box::new(io::stdin().lock()), output_stream: Box::new(io::stdout()) }
+    }
 }
 
 // Idea: The opcodes should only modify Interpreter.code, and they should be the only functions to modify Interpreter.code
 // The parser should purely load param_indices, and modify ip .
 
-impl Interpreter {
+impl Interpreter<'_> {
     pub fn step(&mut self) {
         if self.finish {
             return
@@ -84,18 +94,38 @@ fn op_mul(pc: &mut Interpreter) {
 }
 
 fn op_in(pc: &mut Interpreter) {
-    println!("GET USER INPUT:");
+    print!("Reading input... ");
     let mut input = String::new();
-    match io::stdin().read_line(&mut input) {
-        Ok(_) => {},
-        Err(_) => { println!("ERROR!") },
+    loop {
+        match (*pc.input_stream).read_line(&mut input) {
+            Ok(_) => {},
+            Err(e) => {
+                println!("Error: Interpreter failed to read input: {}", e);
+                process::abort(); // pie_flavor: abort() better than panic!() here
+            },
+        }
+        let res = input.trim().parse::<VALUE>();
+        if let Ok(num) = res {
+            pc.code[pc.param_indices[0]] = num;
+            pc.ip += 2;
+            println!("Read input: {}", num);
+            break;
+        } else {
+            input.clear();
+        }
     }
-    pc.code[pc.param_indices[0]] = input.trim().parse().unwrap();
-    pc.ip += 2;
 }
 
 fn op_out(pc: &mut Interpreter) {
     println!("OUTPUT: {}", pc.code[pc.param_indices[0]]);
+    if let Err(e) = (*pc.output_stream).
+        write_fmt(format_args!("{}\n", pc.code[pc.param_indices[0]]))
+            //write_fmt(format_args!("OUTPUT: {}\n", pc.code[pc.param_indices[0]])) {
+            .and_then( |_| (*pc.output_stream).flush() ) {
+        println!("Error: Interpreter failed to send output: {}", e);
+        process::abort();
+    };
+
     pc.ip += 2;
 }
 
@@ -125,22 +155,3 @@ fn op_eq(pc: &mut Interpreter) {
     pc.ip += 4;
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn check_first_example() {
-        let code = vec![1,9,10,3,2,3,11,0,99,30,40,50];
-        let mut pc: Interpreter = Interpreter { code, ip: 0, param_indices: vec![], finish: false };
-
-        while !pc.finish {
-            println!("{:?}", pc);
-            pc.step();
-        }
-        let wanted = vec![3500,9,10,70, 2,3,11,0, 99, 30,40,50];
-
-        assert_eq!(pc.code, wanted);
-    }
-
-}

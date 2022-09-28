@@ -4,12 +4,12 @@ mod src;
 
 fn main() {
     //let day2_test: Vec<i64> = vec![1,9,10,3,2,3,11,0,99,30,40,50];
-    day5b();
+    day2();
 }
 
 
 /// Solution AoC2019/Day2. Intcode challenge: 1
-fn day2() {
+fn day2() -> src::VALUE {
     let mut data2: Vec<_> = include_str!("../data/day2.txt")
         .trim()
         .split(',')
@@ -19,18 +19,21 @@ fn day2() {
     data2[1] = 12;
     data2[2] = 2;
 
-    let mut pc: Interpreter = Interpreter { code: data2, ip: 0, param_indices: vec![], finish: false };
+    //let mut pc: Interpreter = Interpreter { code: data2, ip: 0, param_indices: vec![], finish: false, output_stream: Box::new(io::stdout()) };
+    let mut pc: Interpreter = Default::default();
+    pc.code = data2;
 
     while !pc.finish {
-        println!("{:?}", pc);
+        //println!("{:?}", pc);
         pc.step();
     }
 
     println!("{}", pc.code[0]);
+    return pc.code[0];
 }
 
 /// Solution AoC2019/Day2b. Intcode challenge: 2
-fn day2b() {
+fn day2b() -> src::VALUE {
     let data2: Vec<_> = include_str!("../data/day2.txt")
         .trim()
         .split(',')
@@ -45,7 +48,8 @@ fn day2b() {
             data[1] = noun;
             data[2] = verb;
 
-            let mut pc: Interpreter = Interpreter { code: data, ip: 0, param_indices: vec![], finish: false };
+            let mut pc: Interpreter = Default::default();
+            pc.code = data;
 
             while !pc.finish {
                 pc.step();
@@ -54,7 +58,7 @@ fn day2b() {
             if pc.code[0] == target {
                 let res = 100*noun + verb;
                 println!("The answer is {}", res);
-                return 
+                return res;
             }
         }
     }
@@ -62,52 +66,168 @@ fn day2b() {
 }
 
 /// Solution AoC2019/Day5. Intcode challenge: 3
-fn day5() {
+fn day5() -> src::VALUE {
     let data5: Vec<_> = include_str!("../data/day5.txt")
         .trim()
         .split(',')
         .map(|x| str::parse(x).unwrap())
         .collect();
 
-    let mut pc: Interpreter = Interpreter { code: data5, ip: 0, param_indices: vec![], finish: false };
+    //let mut pc: Interpreter = Interpreter { code: data5, ip: 0, param_indices: vec![], finish: false };
+    let mut pc: Interpreter = Default::default();
+    pc.code = data5;
 
     while !pc.finish {
-        println!("{:?}", pc);
+        //println!("{:?}", pc);
         pc.step();
     }
 
-    println!("{}", pc.code[pc.ip - 1]);
+    let res = pc.code[pc.ip - 1];
+    println!("{}", res);
+    res
+    
 }
 
 
 
 /// Solution AoC2019/Day5. Intcode challenge: 4
-fn day5b() {
+fn day5b() -> src::VALUE {
     let data5: Vec<_> = include_str!("../data/day5.txt")
         .trim()
         .split(',')
         .map(|x| str::parse(x).unwrap())
         .collect();
 
-    let mut pc: Interpreter = Interpreter { code: data5, ip: 0, param_indices: vec![], finish: false };
+    //let mut pc: Interpreter = Interpreter { code: data5, ip: 0, param_indices: vec![], finish: false };
+    let mut pc: Interpreter = Default::default();
+    pc.code = data5;
 
     while !pc.finish {
-        println!("{:?}", pc);
+        //println!("{:?}", pc);
         pc.step();
     }
 
-    println!("{}", pc.code[pc.ip - 1]);
+    let res = pc.code[pc.ip - 1];
+    println!("{}", res);
+    res
 }
 
 fn day5tests() {
     let test1 = vec![3,9,8,9,10,9,4,9,99,-1,8];
     //let data5: Vec<_> = vec![3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99];
-    let mut pc: Interpreter = Interpreter { code: test1, ip: 0, param_indices: vec![], finish: false };
+    //let mut pc: Interpreter = Interpreter { code: test1, ip: 0, param_indices: vec![], finish: false };
+    let mut pc: Interpreter = Default::default();
+    pc.code = test1;
 
     while !pc.finish {
-        println!("{:?}", pc);
+        //println!("{:?}", pc);
         pc.step();
     }
 }
 
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io;
+
+    #[test]
+    fn check_first_example() {
+        let code = vec![1,9,10,3,2,3,11,0,99,30,40,50];
+        //let mut pc: Interpreter = Interpreter { code, ip: 0, param_indices: vec![], finish: false, output_stream: Box::new(io::stdout())  };
+        let mut pc: Interpreter = Default::default();
+        pc.code = code;
+
+        while !pc.finish {
+            //println!("{:?}", pc);
+            pc.step();
+        }
+        let wanted = vec![3500,9,10,70, 2,3,11,0, 99, 30,40,50];
+
+        assert_eq!(pc.code, wanted);
+    }
+
+    #[test]
+    fn check_day_2() {
+        let res = day2();
+        assert_eq!(res, 6087827);
+
+
+        let res = day2b();
+        assert_eq!(res, 5379);
+    }
+
+    #[test]
+    fn check_day_5() {
+        let data5: Vec<_> = include_str!("../data/day5.txt")
+            .trim()
+            .split(',')
+            .map(|x| str::parse(x).unwrap())
+            .collect();
+
+        let mut output = vec![];
+
+        {
+            let mut pc: Interpreter = Default::default();
+            pc.code = data5;
+
+            pc.input_stream = Box::new(io::BufReader::new(b"1" as &[u8]));
+
+            pc.output_stream = Box::new(io::BufWriter::new(&mut output));
+
+            while !pc.finish {
+                pc.step();
+            }
+
+            (*pc.output_stream).flush().unwrap();
+        }       
+
+        let ss = String::from_utf8_lossy(&output);
+        let given: src::VALUE = ss
+            .trim()
+            .split_ascii_whitespace()
+            .last()
+            .unwrap()
+            .parse()
+            .unwrap();
+
+        assert_eq!(given, 5182797);
+    }
+
+    #[test]
+    fn check_day_5b() {
+        let data5: Vec<_> = include_str!("../data/day5.txt")
+            .trim()
+            .split(',')
+            .map(|x| str::parse(x).unwrap())
+            .collect();
+
+        let mut output = vec![];
+
+        {
+            let mut pc: Interpreter = Default::default();
+            pc.code = data5;
+
+            pc.input_stream = Box::new(io::BufReader::new(b"5" as &[u8]));
+
+            pc.output_stream = Box::new(io::BufWriter::new(&mut output));
+
+            while !pc.finish {
+                pc.step();
+            }
+
+            (*pc.output_stream).flush().unwrap();
+        }       
+
+        let ss = String::from_utf8_lossy(&output);
+        let given: src::VALUE = ss
+            .trim()
+            .split_ascii_whitespace()
+            .last()
+            .unwrap()
+            .parse()
+            .unwrap();
+
+        assert_eq!(given, 12077198);
+    }
+}
