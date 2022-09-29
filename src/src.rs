@@ -1,6 +1,5 @@
 use std::fmt::{Debug, Display};
 use std::io;
-use std::process;
 use std::error::Error;
 
 pub type VALUE = i64;
@@ -8,7 +7,7 @@ pub type VALUE = i64;
 //#[allow(dead_code)]
 
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 pub enum InterpreterError {
     Terminated,
     IoError,
@@ -41,12 +40,13 @@ pub struct Interpreter {
     pub finish: bool,
     //pub output_stream: Box<dyn io::Write + 'a>,
     pub input_buffer: Vec<VALUE>,
-    //pub output_stream: &'a dyn io::Write,
+    pub last_output: Option<VALUE>,
+    pub error: Option<InterpreterError>,
 }
 
 impl Default for Interpreter {
     fn default() -> Interpreter {
-        Interpreter { code: vec![], ip: 0, param_indices: vec![], finish: false, input_buffer: vec![] }
+        Interpreter { code: vec![], ip: 0, param_indices: vec![], finish: false, input_buffer: vec![], last_output: None, error: None }
     }
 }
 
@@ -58,6 +58,9 @@ impl Interpreter {
         if self.finish {
             return Err(InterpreterError::Terminated);
         }
+        self.last_output = None;
+        self.error = None;
+
         let next_code = self.code[self.ip];
         let next_instruction = &OPCODES[((next_code % 100) % 99) as usize];
 
@@ -70,7 +73,26 @@ impl Interpreter {
             .collect();
         (next_instruction.func)(self);
 
-        return Ok(Some(0));
+        if let Some(err) = self.error {
+            return Err(err)
+        }
+
+        if let Some(output) = self.last_output {
+            return Ok(Some(output))
+        }
+
+        return Ok(None)
+    }
+
+    pub fn step_loop(&mut self) -> Result<Option<VALUE>, InterpreterError> { 
+        loop {
+            let res = self.step();
+            match res {
+                Err(_) => { return res; },
+                Ok(Some(_)) => { return res; },
+                Ok(None) => {},
+            }
+        }
     }
 
     pub fn new<'a>(code: Vec<VALUE>, input_buffer: Vec<VALUE>) -> Interpreter {
@@ -80,6 +102,8 @@ impl Interpreter {
             param_indices: vec![],
             finish: false,
             input_buffer,
+            last_output: None,
+            error: None,
         }
     }
 }
@@ -103,26 +127,22 @@ const MAX_PARAMETERS: usize = 3;
 pub struct Instruction {
     opcode: u8,
     name: &'static str,
-    func: fn(&mut Interpreter) -> (),
+    func: fn(&mut Interpreter),
     number_parameters: usize,
 }
 
 fn op_halt(pc: &mut Interpreter) {
     pc.finish = true;
+    pc.error = Some(InterpreterError::Terminated);
     pc.ip += 0;
 }
 
 fn op_add(pc: &mut Interpreter) {
-    //let target: usize = pc.code[pc.ip + 3] as usize;
-    //pc.code[target] = pc.code[pc.code[pc.ip + 1] as usize] + pc.code[pc.code[pc.ip + 2] as usize];
-    //println!("{} = {} + {}", pc.code[pc.param_indices[2] as usize] ,pc.code[pc.param_indices[0] as usize] , pc.code[pc.param_indices[1] as usize]);
     pc.code[pc.param_indices[2] as usize] = pc.code[pc.param_indices[0] as usize] + pc.code[pc.param_indices[1] as usize];
     pc.ip += 4;
 }
 
 fn op_mul(pc: &mut Interpreter) {
-    //let target: usize = pc.code[pc.ip + 3] as usize;
-    //pc.code[target] = pc.code[pc.code[pc.ip + 1] as usize] * pc.code[pc.code[pc.ip + 2] as usize];
     pc.code[pc.param_indices[2] as usize] = pc.code[pc.param_indices[0] as usize] * pc.code[pc.param_indices[1] as usize];
     pc.ip += 4;
 }
@@ -130,37 +150,36 @@ fn op_mul(pc: &mut Interpreter) {
 fn op_in(pc: &mut Interpreter) {
     print!("Reading input... ");
     let mut input = String::new();
+
     if let Some(val) = pc.input_buffer.pop() {
         println!("{}.", val);
         pc.code[pc.param_indices[0]] = val;
-    } else {
-        println!("Input buffer empty. Use stdin. Waiting for input: ");
-        if let Err(e) = io::stdin().read_line(&mut input) {
-            println!("Error: Interpreter failed to read input: {}", e);
-            process::abort();
-        } else {
-            if let Ok(num) = input.parse::<VALUE>() {
-                println!("{}.", num);
-                pc.code[pc.param_indices[0]] = num;
-            } else {
-                println!("Error: Interpreter failed to parse input.");
-                process::abort();
-            }
-        }
+        pc.ip += 2;
+        return
     }
-    pc.ip += 2;
+
+    println!("Input buffer empty. Use stdin. Waiting for input: ");
+    if let Err(e) = io::stdin().read_line(&mut input) {
+        println!("Error: Interpreter failed to read input: {}", e);
+        pc.error = Some(InterpreterError::IoError);
+        return
+    } 
+
+    if let Ok(num) = input.parse::<VALUE>() {
+        println!("{}.", num);
+        pc.code[pc.param_indices[0]] = num;
+        pc.ip += 2;
+        return
+    } 
+
+    println!("Error: Interpreter failed to parse input.");
+    pc.error = Some(InterpreterError::ParseError);
 }
 
 fn op_out(pc: &mut Interpreter) {
     let res = pc.code[pc.param_indices[0]];
     println!("OUTPUT: {}", res);
-    //if let Err(e) = (*pc.output_stream).
-        //write_fmt(format_args!("{}\n", pc.code[pc.param_indices[0]]))
-            ////write_fmt(format_args!("OUTPUT: {}\n", pc.code[pc.param_indices[0]])) {
-            //.and_then( |_| (*pc.output_stream).flush() ) {
-        //println!("Error: Interpreter failed to send output: {}", e);
-        //process::abort();
-    //};
+    pc.last_output = Some(res);
     pc.ip += 2;
 
 }
