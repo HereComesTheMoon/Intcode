@@ -5,7 +5,7 @@ mod src;
 
 fn main() {
     //let day2_test: Vec<i64> = vec![1,9,10,3,2,3,11,0,99,30,40,50];
-    //check_read_write();
+    day2();
 }
 
 

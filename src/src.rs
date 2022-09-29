@@ -1,7 +1,29 @@
+use std::fmt::{Debug, Display};
 use std::io;
 use std::process;
+use std::error::Error;
 
 pub type VALUE = i64;
+
+//#[allow(dead_code)]
+
+
+#[derive(Debug)]
+pub enum InterpreterError {
+    Terminated,
+    IoError,
+    ParseError,
+}
+
+impl Display for InterpreterError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{{ File: {}, Line: {} }}", file!(), line!())
+    }
+}
+
+impl Error for InterpreterError {}
+
+
 
 //#[derive(Debug)]
 pub struct Interpreter {
@@ -32,9 +54,9 @@ impl Default for Interpreter {
 // The parser should purely load param_indices, and modify ip .
 
 impl Interpreter {
-    pub fn step(&mut self) {
+    pub fn step(&mut self) -> Result<Option<VALUE>, InterpreterError> {
         if self.finish {
-            return
+            return Err(InterpreterError::Terminated);
         }
         let next_code = self.code[self.ip];
         let next_instruction = &OPCODES[((next_code % 100) % 99) as usize];
@@ -47,12 +69,11 @@ impl Interpreter {
             })
             .collect();
         (next_instruction.func)(self);
+
+        return Ok(Some(0));
     }
 
     pub fn new<'a>(code: Vec<VALUE>, input_buffer: Vec<VALUE>) -> Interpreter {
-        //let out: Box<dyn io::Write + 'a>,
-        //input_stream: Box<dyn io::BufRead + 'a>,
-
         Interpreter {
             code,
             ip: 0,
@@ -82,7 +103,7 @@ const MAX_PARAMETERS: usize = 3;
 pub struct Instruction {
     opcode: u8,
     name: &'static str,
-    func: fn(&mut Interpreter),
+    func: fn(&mut Interpreter) -> (),
     number_parameters: usize,
 }
 
@@ -140,7 +161,6 @@ fn op_out(pc: &mut Interpreter) {
         //println!("Error: Interpreter failed to send output: {}", e);
         //process::abort();
     //};
-
     pc.ip += 2;
 
 }
