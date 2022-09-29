@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Display};
+use std::fmt::{Debug, Display, format};
 use std::io;
 use std::error::Error;
 
@@ -47,6 +47,42 @@ pub struct Interpreter {
 impl Default for Interpreter {
     fn default() -> Interpreter {
         Interpreter { code: vec![], ip: 0, param_indices: vec![], finish: false, input_buffer: vec![], last_output: None, error: None }
+    }
+}
+
+impl Debug for Interpreter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut s: String = format!("IP: {}, Parameter Indices: {:?}, Input Buffer: {:?}, Last Output: {:?}, Error: {:?}\n", 
+                                    self.ip, self.param_indices, self.input_buffer, self.last_output, self.error);
+        
+        let width = f64::log10(self.code
+            .iter()
+            .fold(self.code.len() as VALUE, |current, &x| VALUE::max(current, x)) as f64).floor() as usize + 1;
+        
+
+        let start = usize::max(self.ip.saturating_sub(7) , 0);
+        let end = usize::min(self.ip + 7, self.code.len());
+
+        s += "[";
+        for k in start..end {
+            s += &*format!("{:>width$},", k);
+        }
+        s += "]\n[";
+        for k in start..end {
+            s += &*format!("{:>width$},", self.code[k]);
+        }
+        s += "]\n";
+
+        //s += "[";
+        //for k in 1..self.code.len() {
+            //s += &*format!("{:>width$},", k);
+        //}
+        //s += "\n";
+        //for x in self.code.iter() {
+            //s += &*format!("{:>width$},", x);
+        //}
+        //s += "\n";
+        writeln!(f, "{}", s)
     }
 }
 
@@ -179,6 +215,13 @@ fn op_in(pc: &mut Interpreter) {
 fn op_out(pc: &mut Interpreter) {
     let res = pc.code[pc.param_indices[0]];
     println!("OUTPUT: {}", res);
+    println!("{:?}", pc);
+
+    let temp_ip = pc.ip;
+    pc.ip = pc.code[pc.param_indices[0]] as usize;
+    println!("{:?}", pc);
+    pc.ip = temp_ip;
+
     pc.last_output = Some(res);
     pc.ip += 2;
 
