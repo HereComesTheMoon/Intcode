@@ -53,7 +53,7 @@ fn day2() -> src::VALUE {
     pc.code = data2;
 
     while !pc.finish {
-        //println!("{:?}", pc);
+        println!("{:?}", pc);
         pc.step();
     }
 
@@ -186,6 +186,50 @@ mod tests {
         assert_eq!(res, 5379);
     }
 
+    #[test]
+    fn check_day_5() {
+        let data5: Vec<_> = include_str!("../data/day5.txt")
+            .trim()
+            .split(',')
+            .map(|x| str::parse(x).unwrap())
+            .collect();
+
+        //let mut output = vec![];
+
+        let mut pc = Interpreter::new(data5, vec![1]);
+
+        // FIXME: Text is technically not correct yet
+        loop {
+            match pc.step() {
+                Err(src::InterpreterError::Terminated) => { break },
+                Err(_) => { panic!() },
+                Ok(None) => { continue },
+                Ok(Some(0)) => { continue },
+                Ok(Some(5182797)) => { continue },
+                Ok(_) => { panic!() },
+            }
+        }
+
+        //assert_eq!(first_output, 5182797);
+    }
+
+
+    #[test]
+    fn check_day_5b() {
+        let data5: Vec<_> = include_str!("../data/day5.txt")
+            .trim()
+            .split(',')
+            .map(|x| str::parse(x).unwrap())
+            .collect();
+
+        //let mut output = vec![];
+
+        let mut pc = Interpreter::new(data5, vec![5]);
+
+        let first_output = pc.step_loop().unwrap().unwrap();
+
+        assert_eq!(first_output, 12077198);
+    }
     //#[test]
     //fn check_day_5() {
         //let data5: Vec<_> = include_str!("../data/day5.txt")
