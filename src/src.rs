@@ -4,7 +4,7 @@ use std::process;
 pub type VALUE = i64;
 
 //#[derive(Debug)]
-pub struct Interpreter<'a> {
+pub struct Interpreter {
     /// The underlying code of the program.
     pub code: Vec<VALUE>,
     /// The instruction pointer.
@@ -17,21 +17,21 @@ pub struct Interpreter<'a> {
     pub param_indices: Vec<usize>,
     /// Indicates whether the program is finished.
     pub finish: bool,
-    pub output_stream: Box<dyn io::Write + 'a>,
-    pub input_stream: Box<dyn io::BufRead + 'a>,
+    //pub output_stream: Box<dyn io::Write + 'a>,
+    pub input_buffer: Vec<VALUE>,
     //pub output_stream: &'a dyn io::Write,
 }
 
-impl<'a> Default for Interpreter<'a> {
-    fn default() -> Interpreter<'a> {
-        Interpreter { code: vec![], ip: 0, param_indices: vec![], finish: false, input_stream: Box::new(io::stdin().lock()), output_stream: Box::new(io::stdout()) }
+impl Default for Interpreter {
+    fn default() -> Interpreter {
+        Interpreter { code: vec![], ip: 0, param_indices: vec![], finish: false, input_buffer: vec![] }
     }
 }
 
 // Idea: The opcodes should only modify Interpreter.code, and they should be the only functions to modify Interpreter.code
 // The parser should purely load param_indices, and modify ip .
 
-impl Interpreter<'_> {
+impl Interpreter {
     pub fn step(&mut self) {
         if self.finish {
             return
@@ -49,7 +49,7 @@ impl Interpreter<'_> {
         (next_instruction.func)(self);
     }
 
-    pub fn new<'a>(code: Vec<VALUE>, output_stream: Box<dyn io::Write>, input_stream: Box<dyn io::BufRead>) -> Interpreter<'a> {
+    pub fn new<'a>(code: Vec<VALUE>, input_buffer: Vec<VALUE>) -> Interpreter {
         //let out: Box<dyn io::Write + 'a>,
         //input_stream: Box<dyn io::BufRead + 'a>,
 
@@ -58,8 +58,7 @@ impl Interpreter<'_> {
             ip: 0,
             param_indices: vec![],
             finish: false,
-            output_stream, 
-            input_stream,
+            input_buffer,
         }
     }
 }
@@ -110,37 +109,40 @@ fn op_mul(pc: &mut Interpreter) {
 fn op_in(pc: &mut Interpreter) {
     print!("Reading input... ");
     let mut input = String::new();
-    loop {
-        match (*pc.input_stream).read_line(&mut input) {
-            Ok(_) => {},
-            Err(e) => {
-                println!("Error: Interpreter failed to read input: {}", e);
-                process::abort(); // pie_flavor: abort() better than panic!() here
-            },
-        }
-        let res = input.trim().parse::<VALUE>();
-        if let Ok(num) = res {
-            pc.code[pc.param_indices[0]] = num;
-            pc.ip += 2;
-            println!("Read input: {}", num);
-            break;
+    if let Some(val) = pc.input_buffer.pop() {
+        println!("{}.", val);
+        pc.code[pc.param_indices[0]] = val;
+    } else {
+        println!("Input buffer empty. Use stdin. Waiting for input: ");
+        if let Err(e) = io::stdin().read_line(&mut input) {
+            println!("Error: Interpreter failed to read input: {}", e);
+            process::abort();
         } else {
-            input.clear();
+            if let Ok(num) = input.parse::<VALUE>() {
+                println!("{}.", num);
+                pc.code[pc.param_indices[0]] = num;
+            } else {
+                println!("Error: Interpreter failed to parse input.");
+                process::abort();
+            }
         }
     }
+    pc.ip += 2;
 }
 
 fn op_out(pc: &mut Interpreter) {
-    println!("OUTPUT: {}", pc.code[pc.param_indices[0]]);
-    if let Err(e) = (*pc.output_stream).
-        write_fmt(format_args!("{}\n", pc.code[pc.param_indices[0]]))
-            //write_fmt(format_args!("OUTPUT: {}\n", pc.code[pc.param_indices[0]])) {
-            .and_then( |_| (*pc.output_stream).flush() ) {
-        println!("Error: Interpreter failed to send output: {}", e);
-        process::abort();
-    };
+    let res = pc.code[pc.param_indices[0]];
+    println!("OUTPUT: {}", res);
+    //if let Err(e) = (*pc.output_stream).
+        //write_fmt(format_args!("{}\n", pc.code[pc.param_indices[0]]))
+            ////write_fmt(format_args!("OUTPUT: {}\n", pc.code[pc.param_indices[0]])) {
+            //.and_then( |_| (*pc.output_stream).flush() ) {
+        //println!("Error: Interpreter failed to send output: {}", e);
+        //process::abort();
+    //};
 
     pc.ip += 2;
+
 }
 
 fn op_jit(pc: &mut Interpreter) {
