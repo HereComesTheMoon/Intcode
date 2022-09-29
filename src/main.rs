@@ -1,12 +1,41 @@
 use src::Interpreter;
+use std::io;
 
 mod src;
 
 fn main() {
     //let day2_test: Vec<i64> = vec![1,9,10,3,2,3,11,0,99,30,40,50];
-    day2();
+    check_read_write();
 }
 
+
+fn check_read_write() {
+    // First, jump past memory registers which are stored at the start of the code
+    // prg ~ beginning of code, mem ~ beginning of memory registers
+    let prg = 10;
+    let mem = 3;
+    // Write content of mem0 to output thrice.
+    //let writer_code = vec![1105, 1, prg, -1, -1, -1, -1, -1, -1, -1,
+                            //04, mem, 04, mem, 04, mem, 99];
+    //let reader_code = vec![1105, 1, prg, -1, -1, -1, -1, -1, -1, -1,
+                            //04, mem, 04, mem, 04, mem, 99];
+
+    // Read content, then write content
+    let streamer_code = vec![1105, 1, prg, -1, -1, -1, -1, -1, -1, -1,
+                            03, mem, 04, mem, 1105, 1, prg];
+
+
+    let mut out1_buf: &'static Vec<u8> = &vec![];
+    let out1 = Box::new(io::BufWriter::new(&mut out1_buf));
+    let mut pc1: Interpreter = Interpreter::new(streamer_code.to_owned(), out1, Box::new(io::stdin().lock()));
+
+
+    println!("{:?}", pc1.code);
+    loop {
+        pc1.step();
+        println!("{:?}", pc1.code);
+    }
+}
 
 /// Solution AoC2019/Day2. Intcode challenge: 1
 fn day2() -> src::VALUE {
@@ -229,5 +258,18 @@ mod tests {
             .unwrap();
 
         assert_eq!(given, 12077198);
+    }
+
+    #[test]
+    fn check_read_write() {
+        let a = 13;
+        //let reader_code = vec![103, a, 104, a, 103, a, 104, a, 103, a, 104, a, 99, 0];
+        let writer_code = vec![104, a, 104, a, 104, a, 104, a, 104, a, 104, a, 99, 12345];
+
+        let mut pc: Interpreter = Default::default();
+        pc.code = writer_code;
+        while !pc.finish {
+            pc.step();
+        }
     }
 }

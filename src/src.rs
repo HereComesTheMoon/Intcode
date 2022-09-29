@@ -48,6 +48,20 @@ impl Interpreter<'_> {
             .collect();
         (next_instruction.func)(self);
     }
+
+    pub fn new<'a>(code: Vec<VALUE>, output_stream: Box<dyn io::Write>, input_stream: Box<dyn io::BufRead>) -> Interpreter<'a> {
+        //let out: Box<dyn io::Write + 'a>,
+        //input_stream: Box<dyn io::BufRead + 'a>,
+
+        Interpreter {
+            code,
+            ip: 0,
+            param_indices: vec![],
+            finish: false,
+            output_stream, 
+            input_stream,
+        }
+    }
 }
 
 // Warning: Order matters
