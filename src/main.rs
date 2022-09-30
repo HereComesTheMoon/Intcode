@@ -1,41 +1,154 @@
 use src::Interpreter;
 use std::io;
+use itertools::Itertools;
 
 mod src;
 
 fn main() {
     //let day2_test: Vec<i64> = vec![1,9,10,3,2,3,11,0,99,30,40,50];
-    day2();
+    day7b();
 }
 
+fn day7() -> src::VALUE {
+    //let mut inputs = vec![0, 1, 2, 3, 4];
 
-//fn check_read_write() {
-    //// First, jump past memory registers which are stored at the start of the code
-    //// prg ~ beginning of code, mem ~ beginning of memory registers
-    //let prg = 10;
-    //let mem = 3;
-    //// Write content of mem0 to output thrice.
-    ////let writer_code = vec![1105, 1, prg, -1, -1, -1, -1, -1, -1, -1,
-                            ////04, mem, 04, mem, 04, mem, 99];
-    ////let reader_code = vec![1105, 1, prg, -1, -1, -1, -1, -1, -1, -1,
-                            ////04, mem, 04, mem, 04, mem, 99];
-
-    //// Read content, then write content
-    //let streamer_code = vec![1105, 1, prg, -1, -1, -1, -1, -1, -1, -1,
-                            //03, mem, 04, mem, 1105, 1, prg];
-
-
-    //let mut out1_buf: &'static Vec<u8> = &vec![];
-    //let out1 = Box::new(io::BufWriter::new(&mut out1_buf));
-    //let mut pc1: Interpreter = Interpreter::new(streamer_code.to_owned(), out1, Box::new(io::stdin().lock()));
-
-
-    //println!("{:?}", pc1.code);
-    //loop {
-        //pc1.step();
-        //println!("{:?}", pc1.code);
+    //struct Permutations<'a> {
+        //v: &'a mut Vec<i64>,
     //}
-//}
+
+    //impl<'a> Iterator for Permutations<'a> {
+        //type Item = &'a Vec<i64>;
+
+        //fn next(&mut self) -> Option<Self::Item> {
+            //for k in self.v.len()..0 {
+                //if self.v[k-1] > self.v[k] {
+                    //self.v.swap(k-1, k);
+                    //return Some(self.v);
+                //}
+            //}
+            //None
+            ////Some(self.v)
+        //}
+    //}
+
+    let data7: Vec<_> = include_str!("../data/day7.txt")
+        .trim()
+        .split(',')
+        .map(|x| str::parse(x).unwrap())
+        .collect();
+
+
+    let mut max_phase_amplifier = 0;
+    let mut counter = 0;
+
+    for inputs in (0..=4).permutations(5) {
+        counter += 1;
+        println!("{:?}", inputs);
+
+        let mut a1 = Interpreter::new(data7.to_owned(), vec![inputs[0], 0].into());
+        let res1 = a1.step_loop().unwrap().unwrap();
+
+        let mut a2 = Interpreter::new(data7.to_owned(), vec![inputs[1], res1].into());
+        let res2 = a2.step_loop().unwrap().unwrap();
+
+        let mut a3 = Interpreter::new(data7.to_owned(), vec![inputs[2], res2].into());
+        let res3 = a3.step_loop().unwrap().unwrap();
+
+        let mut a4 = Interpreter::new(data7.to_owned(), vec![inputs[3], res3].into());
+        let res4 = a4.step_loop().unwrap().unwrap();
+
+        let mut a5 = Interpreter::new(data7.to_owned(), vec![inputs[4], res4].into());
+        let res5 = a5.step_loop().unwrap().unwrap();
+
+        max_phase_amplifier = max_phase_amplifier.max(res5);
+    }
+
+
+    //loop {
+        //counter += 1;
+        //println!("{:?}", inputs);
+        //inputs = match perm(inputs) {
+            //None => { break; },
+            //Some(v) => { v },
+        //};
+
+
+        //let mut a1 = Interpreter::new(data7.to_owned(), vec![inputs[0], 0].into());
+        //let res1 = a1.step_loop().unwrap().unwrap();
+
+        //let mut a2 = Interpreter::new(data7.to_owned(), vec![inputs[1], res1].into());
+        //let res2 = a2.step_loop().unwrap().unwrap();
+
+        //let mut a3 = Interpreter::new(data7.to_owned(), vec![inputs[2], res2].into());
+        //let res3 = a3.step_loop().unwrap().unwrap();
+
+        //let mut a4 = Interpreter::new(data7.to_owned(), vec![inputs[3], res3].into());
+        //let res4 = a4.step_loop().unwrap().unwrap();
+
+        //let mut a5 = Interpreter::new(data7.to_owned(), vec![inputs[4], res4].into());
+        //let res5 = a5.step_loop().unwrap().unwrap();
+
+        //max_phase_amplifier = max_phase_amplifier.max(res5);
+    //}
+
+    println!("Counter: {}", counter);
+    println!("Highest signal strength: {}", max_phase_amplifier);
+    max_phase_amplifier
+}
+
+fn day7b() -> src::VALUE {
+    let data7: Vec<_> = include_str!("../data/day7.txt")
+    //let data7: Vec<_> = "3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5"
+        .trim()
+        .split(',')
+        .map(|x| str::parse(x).unwrap())
+        .collect();
+
+    let mut max_phase_amplifier = 0;
+    let mut counter = 0;
+
+    for inputs in (5..=9).permutations(5) {
+        counter += 1;
+
+        let mut a1 = Interpreter::new(data7.to_owned(), vec![inputs[0], 0].into());
+        let mut a2 = Interpreter::new(data7.to_owned(), vec![inputs[1]].into());
+        let mut a3 = Interpreter::new(data7.to_owned(), vec![inputs[2]].into());
+        let mut a4 = Interpreter::new(data7.to_owned(), vec![inputs[3]].into());
+        let mut a5 = Interpreter::new(data7.to_owned(), vec![inputs[4]].into());
+
+
+        loop {
+            let res1 = match a1.step_loop() {
+                Ok(Some(res)) => { res },
+                Err(src::InterpreterError::Terminated) => { 
+                    a2.step_loop().unwrap_err();
+                    a3.step_loop().unwrap_err();
+                    a4.step_loop().unwrap_err();
+                    max_phase_amplifier = max_phase_amplifier.max(a5.last_output.unwrap());
+                    a5.step_loop().unwrap_err();
+                    break
+                },
+                _ => { panic!() },
+            };
+
+            a2.input_buffer.push_back(res1);
+            let res2 = a2.step_loop().unwrap().unwrap();
+            a3.input_buffer.push_back(res2);
+            let res3 = a3.step_loop().unwrap().unwrap();
+            a4.input_buffer.push_back(res3);
+            let res4 = a4.step_loop().unwrap().unwrap();
+            a5.input_buffer.push_back(res4);
+            let res5 = a5.step_loop().unwrap().unwrap();
+            a1.input_buffer.push_back(res5);
+        }
+    }
+
+
+
+    println!("Counter: {}", counter);
+    println!("Highest signal strength: {}", max_phase_amplifier);
+    max_phase_amplifier
+}
 
 /// Solution AoC2019/Day2. Intcode challenge: 1
 fn day2() -> src::VALUE {
@@ -196,7 +309,7 @@ mod tests {
 
         //let mut output = vec![];
 
-        let mut pc = Interpreter::new(data5, vec![1]);
+        let mut pc = Interpreter::new(data5, vec![1].into());
 
         // FIXME: Text is technically not correct yet
         loop {
@@ -224,7 +337,7 @@ mod tests {
 
         //let mut output = vec![];
 
-        let mut pc = Interpreter::new(data5, vec![5]);
+        let mut pc = Interpreter::new(data5, vec![5].into());
 
         let first_output = pc.step_loop().unwrap().unwrap();
 

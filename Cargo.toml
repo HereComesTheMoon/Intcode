@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 konst = "0.2.18"
+itertools = "0.8.2"
