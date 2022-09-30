@@ -186,7 +186,6 @@ fn op_mul(pc: &mut Interpreter) {
 }
 
 fn op_in(pc: &mut Interpreter) {
-    //FIXME: Input buffer should be a queue! FIFO, not FILO
     print!("Reading input... ");
     let mut input = String::new();
 
@@ -204,7 +203,7 @@ fn op_in(pc: &mut Interpreter) {
         return
     } 
 
-    if let Ok(num) = input.parse::<VALUE>() {
+    if let Ok(num) = input.trim().parse::<VALUE>() {
         println!("{}.", num);
         pc.code[pc.param_indices[0]] = num;
         pc.ip += 2;
