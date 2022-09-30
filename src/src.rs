@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::fmt::{Debug, Display, format};
 use std::io;
 use std::error::Error;
@@ -39,14 +40,15 @@ pub struct Interpreter {
     /// Indicates whether the program is finished.
     pub finish: bool,
     //pub output_stream: Box<dyn io::Write + 'a>,
-    pub input_buffer: Vec<VALUE>,
+    //pub input_buffer: Vec<VALUE>,
+    pub input_buffer: VecDeque<VALUE>,
     pub last_output: Option<VALUE>,
     pub error: Option<InterpreterError>,
 }
 
 impl Default for Interpreter {
     fn default() -> Interpreter {
-        Interpreter { code: vec![], ip: 0, param_indices: vec![], finish: false, input_buffer: vec![], last_output: None, error: None }
+        Interpreter { code: vec![], ip: 0, param_indices: vec![], finish: false, input_buffer: VecDeque::new(), last_output: None, error: None }
     }
 }
 
@@ -131,7 +133,7 @@ impl Interpreter {
         }
     }
 
-    pub fn new<'a>(code: Vec<VALUE>, input_buffer: Vec<VALUE>) -> Interpreter {
+    pub fn new<'a>(code: Vec<VALUE>, input_buffer: VecDeque<VALUE>) -> Interpreter {
         Interpreter {
             code,
             ip: 0,
@@ -184,10 +186,11 @@ fn op_mul(pc: &mut Interpreter) {
 }
 
 fn op_in(pc: &mut Interpreter) {
+    //FIXME: Input buffer should be a queue! FIFO, not FILO
     print!("Reading input... ");
     let mut input = String::new();
 
-    if let Some(val) = pc.input_buffer.pop() {
+    if let Some(val) = pc.input_buffer.pop_front() {
         println!("{}.", val);
         pc.code[pc.param_indices[0]] = val;
         pc.ip += 2;
