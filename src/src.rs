@@ -31,6 +31,7 @@ pub struct Interpreter {
     pub code: Vec<VALUE>,
     /// The instruction pointer.
     pub ip: usize,
+    pub relative_base: usize,
     /// Indicates whether the ip should be moved after the current instruction.
     //pub move_ip: bool,
     /// The relative base register.
@@ -48,7 +49,7 @@ pub struct Interpreter {
 
 impl Default for Interpreter {
     fn default() -> Interpreter {
-        Interpreter { code: vec![], ip: 0, param_indices: vec![], finish: false, input_buffer: VecDeque::new(), last_output: None, error: None }
+        Interpreter { code: vec![], ip: 0, relative_base: 0, param_indices: vec![], finish: false, input_buffer: VecDeque::new(), last_output: None, error: None }
     }
 }
 
@@ -57,13 +58,13 @@ impl Debug for Interpreter {
         let mut s: String = format!("IP: {}, Parameter Indices: {:?}, Input Buffer: {:?}, Last Output: {:?}, Error: {:?}\n", 
                                     self.ip, self.param_indices, self.input_buffer, self.last_output, self.error);
         
-        let width = f64::log10(self.code
-            .iter()
-            .fold(self.code.len() as VALUE, |current, &x| VALUE::max(current, x)) as f64).floor() as usize + 1;
-        
+        let start = usize::max(usize::saturating_sub(self.ip, 7) , 0);
+        let end = usize::min(usize::saturating_add(self.ip, 7), self.code.len());
 
-        let start = usize::max(self.ip.saturating_sub(7) , 0);
-        let end = usize::min(self.ip + 7, self.code.len());
+        let width = f64::log10(self.code[start..end]
+            .iter()
+            .fold(end as VALUE, |current, &x| VALUE::max(current, x)) as f64).floor() as usize + 1;
+        
 
         s += "[";
         for k in start..end {
@@ -74,16 +75,6 @@ impl Debug for Interpreter {
             s += &*format!("{:>width$},", self.code[k]);
         }
         s += "]\n";
-
-        //s += "[";
-        //for k in 1..self.code.len() {
-            //s += &*format!("{:>width$},", k);
-        //}
-        //s += "\n";
-        //for x in self.code.iter() {
-            //s += &*format!("{:>width$},", x);
-        //}
-        //s += "\n";
         writeln!(f, "{}", s)
     }
 }
@@ -111,6 +102,7 @@ impl Interpreter {
             .collect();
         (next_instruction.func)(self);
 
+        assert!(self.ip < 100000);
         if let Some(err) = self.error {
             return Err(err)
         }
@@ -137,6 +129,7 @@ impl Interpreter {
         Interpreter {
             code,
             ip: 0,
+            relative_base: 0,
             param_indices: vec![],
             finish: false,
             input_buffer,
@@ -147,7 +140,7 @@ impl Interpreter {
 }
 
 // Warning: Order matters
-const OPCODES: [Instruction; 9] = [
+const OPCODES: [Instruction; 10] = [
     Instruction { name: "halt", opcode: 99, func: op_halt, number_parameters: 0 },
     Instruction { name: "add", opcode: 1, func: op_add, number_parameters: 3 },
     Instruction { name: "multiply", opcode: 2, func: op_mul, number_parameters: 3 },
@@ -157,6 +150,7 @@ const OPCODES: [Instruction; 9] = [
     Instruction { name: "jump-if-false", opcode: 6, func: op_jif, number_parameters: 2 },
     Instruction { name: "less than", opcode: 7, func: op_lt, number_parameters: 3 },
     Instruction { name: "equals", opcode: 8, func: op_eq, number_parameters: 3 },
+    Instruction { name: "relative base offset", opcode: 9, func: op_relb, number_parameters: 1 },
 ];
 
 const MAX_PARAMETERS: usize = 3;
@@ -217,12 +211,7 @@ fn op_in(pc: &mut Interpreter) {
 fn op_out(pc: &mut Interpreter) {
     let res = pc.code[pc.param_indices[0]];
     println!("OUTPUT: {}", res);
-    println!("{:?}", pc);
-
-    let temp_ip = pc.ip;
-    pc.ip = pc.code[pc.param_indices[0]] as usize;
-    println!("{:?}", pc);
-    pc.ip = temp_ip;
+    //println!("{:?}", pc);
 
     pc.last_output = Some(res);
     pc.ip += 2;
@@ -253,5 +242,10 @@ fn op_lt(pc: &mut Interpreter) {
 fn op_eq(pc: &mut Interpreter) {
     pc.code[pc.param_indices[2]] = (pc.code[pc.param_indices[0]] == pc.code[pc.param_indices[1]]) as VALUE;
     pc.ip += 4;
+}
+
+fn op_relb(pc: &mut Interpreter) {
+    pc.relative_base += pc.param_indices[0];
+    pc.ip += 2;
 }
 

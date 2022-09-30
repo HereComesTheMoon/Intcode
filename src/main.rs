@@ -10,27 +10,6 @@ fn main() {
 }
 
 fn day7() -> src::VALUE {
-    //let mut inputs = vec![0, 1, 2, 3, 4];
-
-    //struct Permutations<'a> {
-        //v: &'a mut Vec<i64>,
-    //}
-
-    //impl<'a> Iterator for Permutations<'a> {
-        //type Item = &'a Vec<i64>;
-
-        //fn next(&mut self) -> Option<Self::Item> {
-            //for k in self.v.len()..0 {
-                //if self.v[k-1] > self.v[k] {
-                    //self.v.swap(k-1, k);
-                    //return Some(self.v);
-                //}
-            //}
-            //None
-            ////Some(self.v)
-        //}
-    //}
-
     let data7: Vec<_> = include_str!("../data/day7.txt")
         .trim()
         .split(',')
@@ -39,10 +18,8 @@ fn day7() -> src::VALUE {
 
 
     let mut max_phase_amplifier = 0;
-    let mut counter = 0;
 
     for inputs in (0..=4).permutations(5) {
-        counter += 1;
         println!("{:?}", inputs);
 
         let mut a1 = Interpreter::new(data7.to_owned(), vec![inputs[0], 0].into());
@@ -63,35 +40,6 @@ fn day7() -> src::VALUE {
         max_phase_amplifier = max_phase_amplifier.max(res5);
     }
 
-
-    //loop {
-        //counter += 1;
-        //println!("{:?}", inputs);
-        //inputs = match perm(inputs) {
-            //None => { break; },
-            //Some(v) => { v },
-        //};
-
-
-        //let mut a1 = Interpreter::new(data7.to_owned(), vec![inputs[0], 0].into());
-        //let res1 = a1.step_loop().unwrap().unwrap();
-
-        //let mut a2 = Interpreter::new(data7.to_owned(), vec![inputs[1], res1].into());
-        //let res2 = a2.step_loop().unwrap().unwrap();
-
-        //let mut a3 = Interpreter::new(data7.to_owned(), vec![inputs[2], res2].into());
-        //let res3 = a3.step_loop().unwrap().unwrap();
-
-        //let mut a4 = Interpreter::new(data7.to_owned(), vec![inputs[3], res3].into());
-        //let res4 = a4.step_loop().unwrap().unwrap();
-
-        //let mut a5 = Interpreter::new(data7.to_owned(), vec![inputs[4], res4].into());
-        //let res5 = a5.step_loop().unwrap().unwrap();
-
-        //max_phase_amplifier = max_phase_amplifier.max(res5);
-    //}
-
-    println!("Counter: {}", counter);
     println!("Highest signal strength: {}", max_phase_amplifier);
     max_phase_amplifier
 }
@@ -311,7 +259,7 @@ mod tests {
 
         let mut pc = Interpreter::new(data5, vec![1].into());
 
-        // FIXME: Text is technically not correct yet
+        // FIXME: Test is technically not correct yet
         loop {
             match pc.step() {
                 Err(src::InterpreterError::Terminated) => { break },
