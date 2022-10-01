@@ -4,9 +4,44 @@ use itertools::Itertools;
 
 mod src;
 
+
+const DAY2A_RESULT: src::VALUE = 6087827;
+const DAY2B_RESULT: src::VALUE = 5379;
+const DAY5A_RESULT: src::VALUE = 5182797;
+const DAY5B_RESULT: src::VALUE = 12077198;
+const DAY7A_RESULT: src::VALUE = 77500;
+const DAY7B_RESULT: src::VALUE = 22476942;
+const DAY9A_RESULT: src::VALUE = 2406950601;
+const DAY9B_RESULT: src::VALUE = 83239;
+
+
 fn main() {
     //let day2_test: Vec<i64> = vec![1,9,10,3,2,3,11,0,99,30,40,50];
-    day7b();
+    day9();
+}
+
+fn day9() -> () {
+    let data9: Vec<src::VALUE> = include_str!("../data/day9.txt")
+        .trim()
+        .split(',')
+        .map(|x| str::parse(x).unwrap())
+        .collect();
+
+        let mut pc = Interpreter::new(data9.to_owned(), vec![1].into());
+
+        println!("{:?}", pc);
+        loop {
+            let res = pc.step_loop();
+
+            if let Err(src::InterpreterError::Terminated) = res {
+                break
+            }
+
+            if let Ok(Some(val)) = res {
+                println!("Output: {}", val);
+            }
+        }
+
 }
 
 fn day7() -> src::VALUE {
@@ -219,7 +254,6 @@ fn day5tests() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io;
 
     #[test]
     fn check_first_example() {
@@ -237,15 +271,66 @@ mod tests {
         assert_eq!(pc.code, wanted);
     }
 
+    // Solution AoC2019/Day2. Intcode challenge: 1
     #[test]
-    fn check_day_2() {
-        let res = day2();
-        assert_eq!(res, 6087827);
+    fn day2() {
+        let mut data2: Vec<_> = include_str!("../data/day2.txt")
+            .trim()
+            .split(',')
+            .map(|x| str::parse(x).unwrap())
+            .collect();
 
+        data2[1] = 12;
+        data2[2] = 2;
 
-        let res = day2b();
-        assert_eq!(res, 5379);
+        let mut pc = Interpreter::new(data2, vec![].into());
+
+        let res = pc.step_loop();
+
+        if let Err(src::InterpreterError::Terminated) = res {
+        } else {
+            assert!(false);
+        }
+
+        assert_eq!(pc.code[0], DAY2A_RESULT);
     }
+
+    // Solution AoC2019/Day2b. Intcode challenge: 2
+    #[test]
+    fn day2b() {
+        let data2: Vec<_> = include_str!("../data/day2.txt")
+            .trim()
+            .split(',')
+            .map(|x| str::parse(x).unwrap())
+            .collect();
+
+        let target = 19690720;
+
+        for noun in 0..=99 {
+            for verb in 0..=99 {
+                let mut data = data2.to_owned();
+                data[1] = noun;
+                data[2] = verb;
+
+                let mut pc = Interpreter::new(data, vec![].into());
+
+                let res = pc.step_loop();
+
+                if let Err(src::InterpreterError::Terminated) = res {
+                } else {
+                    assert!(false);
+                }
+
+                if pc.code[0] == target {
+                    let result = 100*noun + verb;
+                    assert_eq!(result, DAY2B_RESULT);
+                    return
+                }
+            }
+        }
+        unreachable!()
+    }
+
 
     #[test]
     fn check_day_5() {
@@ -366,15 +451,58 @@ mod tests {
     //}
 
     #[test]
-    fn check_read_write() {
-        let a = 13;
-        //let reader_code = vec![103, a, 104, a, 103, a, 104, a, 103, a, 104, a, 99, 0];
-        let writer_code = vec![104, a, 104, a, 104, a, 104, a, 104, a, 104, a, 99, 12345];
+    fn day9a() {
+        let data9: Vec<src::VALUE> = include_str!("../data/day9.txt")
+            .trim()
+            .split(',')
+            .map(|x| str::parse(x).unwrap())
+            .collect();
 
-        let mut pc: Interpreter = Default::default();
-        pc.code = writer_code;
-        while !pc.finish {
-            pc.step();
+        let mut pc = Interpreter::new(data9.to_owned(), vec![1].into());
+        let mut output = vec![];
+
+        loop {
+            let res = pc.step_loop();
+
+            match res {
+                Err(src::InterpreterError::Terminated) => {break},
+                Err(_) => {panic!()}, 
+                Ok(Some(val)) => {println!("Output: {}", val); output.push(val);},
+                Ok(None) => {},
+            }
         }
+
+        let res = output.pop().unwrap();
+
+        assert!(output.iter().all(|&x| x == 0));
+        assert_eq!(res, DAY9A_RESULT);
     }
+
+    #[test]
+    fn day9b() {
+        let data9: Vec<src::VALUE> = include_str!("../data/day9.txt")
+            .trim()
+            .split(',')
+            .map(|x| str::parse(x).unwrap())
+            .collect();
+
+        let mut pc = Interpreter::new(data9.to_owned(), vec![2].into());
+        let mut output = vec![];
+
+        loop {
+            let res = pc.step_loop();
+
+            match res {
+                Err(src::InterpreterError::Terminated) => {break},
+                Err(_) => {panic!()}, 
+                Ok(Some(val)) => {println!("Output: {}", val); output.push(val);},
+                Ok(None) => {},
+            }
+        }
+
+        assert!(output.len() == 1);
+        let res = output.pop().unwrap();
+        assert_eq!(res, DAY9B_RESULT);
+    }
+
 }
