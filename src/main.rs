@@ -273,7 +273,7 @@ mod tests {
 
     // Solution AoC2019/Day2. Intcode challenge: 1
     #[test]
-    fn day2() {
+    fn day2a() {
         let mut data2: Vec<_> = include_str!("../data/day2.txt")
             .trim()
             .split(',')
@@ -333,122 +333,137 @@ mod tests {
 
 
     #[test]
-    fn check_day_5() {
+    fn day5a() {
         let data5: Vec<_> = include_str!("../data/day5.txt")
             .trim()
             .split(',')
             .map(|x| str::parse(x).unwrap())
             .collect();
 
-        //let mut output = vec![];
-
         let mut pc = Interpreter::new(data5, vec![1].into());
+        let mut output = vec![];
 
-        // FIXME: Test is technically not correct yet
         loop {
-            match pc.step() {
-                Err(src::InterpreterError::Terminated) => { break },
+            let res = pc.step_loop();
+            match res {
+                Err(src::InterpreterError::Terminated) => { break; },
                 Err(_) => { panic!() },
-                Ok(None) => { continue },
-                Ok(Some(0)) => { continue },
-                Ok(Some(5182797)) => { continue },
-                Ok(_) => { panic!() },
+                Ok(Some(val)) => { println!("Output: {}", val); output.push(val); },
+                Ok(None) => {},
             }
         }
 
-        //assert_eq!(first_output, 5182797);
+        let result = output.pop().unwrap();
+        
+        assert!(output.into_iter().all(|x| x == 0));
+        assert_eq!(result, DAY5A_RESULT);
     }
 
-
     #[test]
-    fn check_day_5b() {
+    fn day5b() {
         let data5: Vec<_> = include_str!("../data/day5.txt")
             .trim()
             .split(',')
             .map(|x| str::parse(x).unwrap())
             .collect();
 
-        //let mut output = vec![];
-
         let mut pc = Interpreter::new(data5, vec![5].into());
+        let mut output = vec![];
 
-        let first_output = pc.step_loop().unwrap().unwrap();
+        loop {
+            let res = pc.step_loop();
+            match res {
+                Err(src::InterpreterError::Terminated) => { break; },
+                Err(_) => { panic!() },
+                Ok(Some(val)) => { println!("Output: {}", val); output.push(val); },
+                Ok(None) => {},
+            }
+        }
 
-        assert_eq!(first_output, 12077198);
+        let result = output.pop().unwrap();
+        
+        assert!(output.into_iter().all(|x| x == 0));
+        assert_eq!(result, DAY5B_RESULT);
     }
-    //#[test]
-    //fn check_day_5() {
-        //let data5: Vec<_> = include_str!("../data/day5.txt")
-            //.trim()
-            //.split(',')
-            //.map(|x| str::parse(x).unwrap())
-            //.collect();
 
-        //let mut output = vec![];
+    #[test]
+    fn day7a() {
+        let data7: Vec<_> = include_str!("../data/day7.txt")
+            .trim()
+            .split(',')
+            .map(|x| str::parse(x).unwrap())
+            .collect();
 
-        //{
-            //let mut pc: Interpreter = Default::default();
-            //pc.code = data5;
+        let mut signal_strength = 0;
 
-            //pc.input_stream = Box::new(io::BufReader::new(b"1" as &[u8]));
+        for inputs in (0..=4).permutations(5) {
+            let mut a1 = Interpreter::new(data7.to_owned(), vec![inputs[0], 0].into());
+            let res1 = a1.step_loop().unwrap().unwrap();
 
-            //pc.output_stream = Box::new(io::BufWriter::new(&mut output));
+            let mut a2 = Interpreter::new(data7.to_owned(), vec![inputs[1], res1].into());
+            let res2 = a2.step_loop().unwrap().unwrap();
 
-            //while !pc.finish {
-                //pc.step();
-            //}
+            let mut a3 = Interpreter::new(data7.to_owned(), vec![inputs[2], res2].into());
+            let res3 = a3.step_loop().unwrap().unwrap();
 
-            //(*pc.output_stream).flush().unwrap();
-        //}       
+            let mut a4 = Interpreter::new(data7.to_owned(), vec![inputs[3], res3].into());
+            let res4 = a4.step_loop().unwrap().unwrap();
 
-        //let ss = String::from_utf8_lossy(&output);
-        //let given: src::VALUE = ss
-            //.trim()
-            //.split_ascii_whitespace()
-            //.last()
-            //.unwrap()
-            //.parse()
-            //.unwrap();
+            let mut a5 = Interpreter::new(data7.to_owned(), vec![inputs[4], res4].into());
+            let res5 = a5.step_loop().unwrap().unwrap();
 
-        //assert_eq!(given, 5182797);
-    //}
+            signal_strength = signal_strength.max(res5);
+        }
 
-    //#[test]
-    //fn check_day_5b() {
-        //let data5: Vec<_> = include_str!("../data/day5.txt")
-            //.trim()
-            //.split(',')
-            //.map(|x| str::parse(x).unwrap())
-            //.collect();
+        assert_eq!(signal_strength, DAY7A_RESULT);
+    }
 
-        //let mut output = vec![];
+    #[test]
+    fn day7b() {
+        let data7: Vec<_> = include_str!("../data/day7.txt")
+            .trim()
+            .split(',')
+            .map(|x| str::parse(x).unwrap())
+            .collect();
 
-        //{
-            //let mut pc: Interpreter = Default::default();
-            //pc.code = data5;
+        let mut signal_strength = 0;
 
-            //pc.input_stream = Box::new(io::BufReader::new(b"5" as &[u8]));
+        for inputs in (5..=9).permutations(5) {
+            let mut a1 = Interpreter::new(data7.to_owned(), vec![inputs[0], 0].into());
+            let mut a2 = Interpreter::new(data7.to_owned(), vec![inputs[1]].into());
+            let mut a3 = Interpreter::new(data7.to_owned(), vec![inputs[2]].into());
+            let mut a4 = Interpreter::new(data7.to_owned(), vec![inputs[3]].into());
+            let mut a5 = Interpreter::new(data7.to_owned(), vec![inputs[4]].into());
 
-            //pc.output_stream = Box::new(io::BufWriter::new(&mut output));
 
-            //while !pc.finish {
-                //pc.step();
-            //}
+            loop {
+                let res1 = match a1.step_loop() {
+                    Ok(Some(res)) => { res },
+                    Err(src::InterpreterError::Terminated) => { 
+                        // Once the first amplifier terminates, all the amplifiers will terminate
+                        a2.step_loop().unwrap_err();
+                        a3.step_loop().unwrap_err();
+                        a4.step_loop().unwrap_err();
+                        signal_strength = signal_strength.max(a5.last_output.unwrap());
+                        a5.step_loop().unwrap_err();
+                        break
+                    },
+                    _ => { panic!() },
+                };
 
-            //(*pc.output_stream).flush().unwrap();
-        //}       
-
-        //let ss = String::from_utf8_lossy(&output);
-        //let given: src::VALUE = ss
-            //.trim()
-            //.split_ascii_whitespace()
-            //.last()
-            //.unwrap()
-            //.parse()
-            //.unwrap();
-
-        //assert_eq!(given, 12077198);
-    //}
+                a2.input_buffer.push_back(res1);
+                let res2 = a2.step_loop().unwrap().unwrap();
+                a3.input_buffer.push_back(res2);
+                let res3 = a3.step_loop().unwrap().unwrap();
+                a4.input_buffer.push_back(res3);
+                let res4 = a4.step_loop().unwrap().unwrap();
+                a5.input_buffer.push_back(res4);
+                let res5 = a5.step_loop().unwrap().unwrap();
+                a1.input_buffer.push_back(res5);
+            }
+        }
+        assert_eq!(signal_strength, DAY7B_RESULT);
+    }
 
     #[test]
     fn day9a() {
