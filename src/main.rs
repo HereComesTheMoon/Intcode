@@ -1,5 +1,5 @@
 use src::Interpreter;
-use std::io;
+use std::{io, collections::VecDeque};
 use itertools::Itertools;
 
 mod src;
@@ -19,6 +19,31 @@ fn main() {
     //let day2_test: Vec<i64> = vec![1,9,10,3,2,3,11,0,99,30,40,50];
     day9();
 }
+
+fn execute(code_str: &str, input_buffer: VecDeque<src::VALUE>) -> Result<Vec<src::VALUE>, src::InterpreterError> {
+    let data: Vec<src::VALUE> = code_str
+        .trim()
+        .split(',')
+        .map(|x| str::parse(x).unwrap())
+        .collect();
+
+    let mut pc = Interpreter::new(data.to_owned(), input_buffer);
+    let mut output = vec![];
+
+    loop {
+        let res = pc.step_loop();
+
+        match res {
+            Err(src::InterpreterError::Terminated) => {break},
+            Err(e) => { return Err(e); }, 
+            Ok(Some(val)) => { output.push(val); },
+            Ok(None) => {},
+        }
+    }
+
+    Ok(output)
+}
+
 
 fn day9() -> () {
     let data9: Vec<src::VALUE> = include_str!("../data/day9.txt")
@@ -334,30 +359,40 @@ mod tests {
 
     #[test]
     fn day5a() {
-        let data5: Vec<_> = include_str!("../data/day5.txt")
-            .trim()
-            .split(',')
-            .map(|x| str::parse(x).unwrap())
-            .collect();
+        let mut wanted = vec![0; 10];
+        wanted[9] = DAY5A_RESULT;
+        let wanted = wanted;
 
-        let mut pc = Interpreter::new(data5, vec![1].into());
-        let mut output = vec![];
+        let given = execute(include_str!("../data/day5.txt"), vec![1].into()).unwrap();
 
-        loop {
-            let res = pc.step_loop();
-            match res {
-                Err(src::InterpreterError::Terminated) => { break; },
-                Err(_) => { panic!() },
-                Ok(Some(val)) => { println!("Output: {}", val); output.push(val); },
-                Ok(None) => {},
-            }
-        }
-
-        let result = output.pop().unwrap();
-        
-        assert!(output.into_iter().all(|x| x == 0));
-        assert_eq!(result, DAY5A_RESULT);
+        assert_eq!(wanted, given);
     }
+    //#[test]
+    //fn day5a() {
+        //let data5: Vec<_> = include_str!("../data/day5.txt")
+            //.trim()
+            //.split(',')
+            //.map(|x| str::parse(x).unwrap())
+            //.collect();
+
+        //let mut pc = Interpreter::new(data5, vec![1].into());
+        //let mut output = vec![];
+
+        //loop {
+            //let res = pc.step_loop();
+            //match res {
+                //Err(src::InterpreterError::Terminated) => { break; },
+                //Err(_) => { panic!() },
+                //Ok(Some(val)) => { println!("Output: {}", val); output.push(val); },
+                //Ok(None) => {},
+            //}
+        //}
+
+        //let result = output.pop().unwrap();
+        
+        //assert!(output.into_iter().all(|x| x == 0));
+        //assert_eq!(result, DAY5A_RESULT);
+    //}
 
     #[test]
     fn day5b() {

@@ -181,6 +181,9 @@ fn op_mul(pc: &mut Interpreter) {
     pc.ip += 4;
 }
 
+// TODO: Instead of prompting user input via stdin, return error code.
+// Gives user greater control: They can match the no_input error, and add input by
+// pushing to the input_buffer
 fn op_in(pc: &mut Interpreter) {
     print!("Reading input... ");
     let mut input = String::new();
