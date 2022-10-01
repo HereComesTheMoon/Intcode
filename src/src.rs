@@ -1,12 +1,9 @@
 use std::collections::VecDeque;
-use std::fmt::{Debug, Display, format};
+use std::fmt::{Debug, Display};
 use std::io;
 use std::error::Error;
 
 pub type VALUE = i64;
-
-//#[allow(dead_code)]
-
 
 #[derive(Copy, Clone, Debug)]
 pub enum InterpreterError {
@@ -27,6 +24,7 @@ impl Error for InterpreterError {}
 
 //#[derive(Debug)]
 pub struct Interpreter {
+    // TODO: Make stuff non-public!
     /// The underlying code of the program.
     pub code: Vec<VALUE>,
     /// The instruction pointer.
@@ -78,9 +76,6 @@ impl Debug for Interpreter {
         writeln!(f, "{}", s)
     }
 }
-
-// Idea: The opcodes should only modify Interpreter.code, and they should be the only functions to modify Interpreter.code
-// The parser should purely load param_indices, and modify ip .
 
 impl Interpreter {
     pub fn step(&mut self) -> Result<Option<VALUE>, InterpreterError> {
@@ -141,7 +136,7 @@ impl Interpreter {
     }
 }
 
-// Warning: Order matters
+// Warning: Quasi-jump table, Order of items important. 
 const OPCODES: [Instruction; 10] = [
     Instruction { name: "halt", opcode: 99, func: op_halt, number_parameters: 0 },
     Instruction { name: "add", opcode: 1, func: op_add, number_parameters: 3 },
