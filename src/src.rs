@@ -3,6 +3,7 @@ use std::fmt::{Debug, Display};
 use std::io;
 use std::error::Error;
 
+// TODO: Decide if want to keep this, or just make everything i64
 pub type VALUE = i64;
 
 #[derive(Copy, Clone, Debug)]
@@ -13,6 +14,7 @@ pub enum InterpreterError {
 }
 
 impl Display for InterpreterError {
+    // FIXME: Rewrite the fmt here.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{{ File: {}, Line: {} }}", file!(), line!())
     }
@@ -26,22 +28,19 @@ impl Error for InterpreterError {}
 pub struct Interpreter {
     // TODO: Make stuff non-public!
     /// The underlying code of the program.
-    pub code: Vec<VALUE>,
+    code: Vec<VALUE>,
     /// The instruction pointer.
-    pub ip: usize,
-    pub relative_base: isize,
-    /// Indicates whether the ip should be moved after the current instruction.
-    //pub move_ip: bool,
-    /// The relative base register.
-    //pub rel_base: i64,
+    ip: usize,
+    relative_base: isize,
     /// The arguments for the current instruction.
-    pub param_indices: Vec<usize>,
+    param_indices: Vec<usize>,
     /// Indicates whether the program is finished.
     pub finish: bool,
-    //pub output_stream: Box<dyn io::Write + 'a>,
-    //pub input_buffer: Vec<VALUE>,
+    /// Input buffer
     pub input_buffer: VecDeque<VALUE>,
+    /// The last valid output. 
     pub last_output: Option<VALUE>,
+    /// Any error that occurred during the last (attempt to) call step().
     pub error: Option<InterpreterError>,
 }
 
@@ -56,6 +55,8 @@ impl Debug for Interpreter {
         let mut s: String = format!("IP: {}, Parameter Indices: {:?}, Input Buffer: {:?}, Last Output: {:?}, Error: {:?}\n", 
                                     self.ip, self.param_indices, self.input_buffer, self.last_output, self.error);
         
+        // FIXME: Change 7 to something else. Would it be possible (in theory) to check the size of
+        // the terminal, and use that to calculate the maximal possible value?
         let start = usize::max(usize::saturating_sub(self.ip, 7) , 0);
         let end = usize::min(usize::saturating_add(self.ip, 7), self.code.len());
 
@@ -98,7 +99,6 @@ impl Interpreter {
             .collect();
         (next_instruction.func)(self);
 
-        assert!(self.ip < 100000);
         if let Some(err) = self.error {
             return Err(err)
         }
@@ -122,7 +122,9 @@ impl Interpreter {
     }
 
     pub fn new<'a>(mut code: Vec<VALUE>, input_buffer: VecDeque<VALUE>) -> Interpreter {
-        code.extend(vec![0i64; 9*code.len()]);
+        code.extend(vec![0i64; 9*code.len()]); // Ensure starting memory is large enough. No
+                                               // precise specification for how large it needs to
+                                               // be.
         Interpreter {
             code,
             ip: 0,
@@ -149,8 +151,6 @@ const OPCODES: [Instruction; 10] = [
     Instruction { name: "equals", opcode: 8, func: op_eq, number_parameters: 3 },
     Instruction { name: "relative base offset", opcode: 9, func: op_relb, number_parameters: 1 },
 ];
-
-const MAX_PARAMETERS: usize = 3;
 
 #[allow(dead_code)]
 pub struct Instruction {
@@ -211,7 +211,6 @@ fn op_in(pc: &mut Interpreter) {
 fn op_out(pc: &mut Interpreter) {
     let res = pc.code[pc.param_indices[0]];
     println!("OUTPUT: {}", res);
-    //println!("{:?}", pc);
 
     pc.last_output = Some(res);
     pc.ip += 2;
@@ -245,8 +244,6 @@ fn op_eq(pc: &mut Interpreter) {
 }
 
 fn op_relb(pc: &mut Interpreter) {
-    println!("{:?}", pc);
-    println!("RelBase {} + val {} ", pc.relative_base, pc.code[pc.param_indices[0] as usize] as usize);
     pc.relative_base = (pc.relative_base as i64 + pc.code[pc.param_indices[0] as usize] as i64) as isize;
     pc.ip += 2;
 }
