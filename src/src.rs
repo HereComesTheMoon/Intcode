@@ -31,7 +31,7 @@ pub struct Interpreter {
     pub code: Vec<VALUE>,
     /// The instruction pointer.
     pub ip: usize,
-    pub relative_base: usize,
+    pub relative_base: isize,
     /// Indicates whether the ip should be moved after the current instruction.
     //pub move_ip: bool,
     /// The relative base register.
@@ -97,6 +97,7 @@ impl Interpreter {
             .map(|k| match (next_code / 10i64.pow(2+k as u32)) % 10 {
                 0 => { self.code[self.ip + 1 + k] as usize },
                 1 => { self.ip + 1 + k },
+                2 => { (self.relative_base + self.code[self.ip + 1 + k] as isize) as usize },
                 _ => unreachable!(),
             })
             .collect();
@@ -125,7 +126,8 @@ impl Interpreter {
         }
     }
 
-    pub fn new<'a>(code: Vec<VALUE>, input_buffer: VecDeque<VALUE>) -> Interpreter {
+    pub fn new<'a>(mut code: Vec<VALUE>, input_buffer: VecDeque<VALUE>) -> Interpreter {
+        code.extend(vec![0i64; 9*code.len()]);
         Interpreter {
             code,
             ip: 0,
@@ -245,7 +247,9 @@ fn op_eq(pc: &mut Interpreter) {
 }
 
 fn op_relb(pc: &mut Interpreter) {
-    pc.relative_base += pc.param_indices[0];
+    println!("{:?}", pc);
+    println!("RelBase {} + val {} ", pc.relative_base, pc.code[pc.param_indices[0] as usize] as usize);
+    pc.relative_base = (pc.relative_base as i64 + pc.code[pc.param_indices[0] as usize] as i64) as isize;
     pc.ip += 2;
 }
 
