@@ -1,11 +1,44 @@
 use src::Interpreter;
 use std::collections::VecDeque;
+use std::collections::HashMap;
+use num_complex::Complex;
 
 mod src;
 
 fn main() {
     execute(vec![99], vec![].into());
+
+    //day11a()
+
 }
+
+//fn day11a() {
+    //let data = string_to_code(include_str!("../data/day11.txt"));
+
+    //let mut pos: Complex<i64> = Complex::new(0, 0);
+    //let mut dir: Complex<i64> = Complex::new(1, 0);
+    //let mut pc = Interpreter::new(data, vec![].into());
+    //let mut output = vec![pos];
+
+    //let mut tiles: HashMap<Complex<i64>, bool> = HashMap::new();
+
+    //{
+        //let first = pc.step_loop();
+        ////match first {
+            ////Err(src::InterpreterError::Terminated) => { break; },
+            ////Err(_) => { panic!() },
+            ////Ok(Some())
+
+        ////}
+        //if let Ok(Some(color)) = pc.step_loop() {
+            //tiles.insert(pos, color != 0);
+        //}
+        //let res_y = pc.step_loop().unwrap().unwrap();
+        
+        
+    //}
+
+//}
 
 fn execute(data: Vec<src::VALUE>, input_buffer: VecDeque<src::VALUE>) -> Result<Vec<src::VALUE>, src::InterpreterError> {
     let mut pc = Interpreter::new(data.to_owned(), input_buffer);
@@ -17,8 +50,7 @@ fn execute(data: Vec<src::VALUE>, input_buffer: VecDeque<src::VALUE>) -> Result<
         match res {
             Err(src::InterpreterError::Terminated) => {break},
             Err(e) => { return Err(e); }, 
-            Ok(Some(val)) => { output.push(val); },
-            Ok(None) => {},
+            Ok(val) => { output.push(val); },
         }
     }
 
@@ -187,19 +219,19 @@ mod tests {
 
         for inputs in (0..=4).permutations(5) {
             let mut a1 = Interpreter::new(data7.to_owned(), vec![inputs[0], 0].into());
-            let res1 = a1.step_loop().unwrap().unwrap();
+            let res1 = a1.step_loop().unwrap();
 
             let mut a2 = Interpreter::new(data7.to_owned(), vec![inputs[1], res1].into());
-            let res2 = a2.step_loop().unwrap().unwrap();
+            let res2 = a2.step_loop().unwrap();
 
             let mut a3 = Interpreter::new(data7.to_owned(), vec![inputs[2], res2].into());
-            let res3 = a3.step_loop().unwrap().unwrap();
+            let res3 = a3.step_loop().unwrap();
 
             let mut a4 = Interpreter::new(data7.to_owned(), vec![inputs[3], res3].into());
-            let res4 = a4.step_loop().unwrap().unwrap();
+            let res4 = a4.step_loop().unwrap();
 
             let mut a5 = Interpreter::new(data7.to_owned(), vec![inputs[4], res4].into());
-            let res5 = a5.step_loop().unwrap().unwrap();
+            let res5 = a5.step_loop().unwrap();
 
             signal_strength = signal_strength.max(res5);
         }
@@ -223,7 +255,7 @@ mod tests {
 
             loop {
                 let res1 = match a1.step_loop() {
-                    Ok(Some(res)) => { res },
+                    Ok(res) => { res },
                     Err(src::InterpreterError::Terminated) => { 
                         // Once the first amplifier terminates, all the amplifiers will terminate
                         a2.step_loop().unwrap_err();
@@ -237,13 +269,13 @@ mod tests {
                 };
 
                 a2.input_buffer.push_back(res1);
-                let res2 = a2.step_loop().unwrap().unwrap();
+                let res2 = a2.step_loop().unwrap();
                 a3.input_buffer.push_back(res2);
-                let res3 = a3.step_loop().unwrap().unwrap();
+                let res3 = a3.step_loop().unwrap();
                 a4.input_buffer.push_back(res3);
-                let res4 = a4.step_loop().unwrap().unwrap();
+                let res4 = a4.step_loop().unwrap();
                 a5.input_buffer.push_back(res4);
-                let res5 = a5.step_loop().unwrap().unwrap();
+                let res5 = a5.step_loop().unwrap();
                 a1.input_buffer.push_back(res5);
             }
         }

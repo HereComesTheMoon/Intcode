@@ -110,12 +110,12 @@ impl Interpreter {
         return Ok(None)
     }
 
-    pub fn step_loop(&mut self) -> Result<Option<VALUE>, InterpreterError> { 
+    pub fn step_loop(&mut self) -> Result<VALUE, InterpreterError> { 
         loop {
             let res = self.step();
             match res {
-                Err(_) => { return res; },
-                Ok(Some(_)) => { return res; },
+                Err(e) => { return Err(e); },
+                Ok(Some(val)) => { return Ok(val); },
                 Ok(None) => {},
             }
         }
