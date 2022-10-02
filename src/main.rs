@@ -8,37 +8,44 @@ mod src;
 fn main() {
     execute(vec![99], vec![].into());
 
-    //day11a()
+    day11a()
 
 }
 
-//fn day11a() {
-    //let data = string_to_code(include_str!("../data/day11.txt"));
+fn day11a() {
+    let data = string_to_code(include_str!("../data/day11.txt"));
 
-    //let mut pos: Complex<i64> = Complex::new(0, 0);
-    //let mut dir: Complex<i64> = Complex::new(1, 0);
-    //let mut pc = Interpreter::new(data, vec![].into());
-    //let mut output = vec![pos];
+    let mut pos: Complex<i64> = Complex::new(0, 0);
+    let mut dir: Complex<i64> = Complex::new(1, 0);
+    let mut pc = Interpreter::new(data, vec![0].into());
+    //let mut output = vec![];
 
-    //let mut tiles: HashMap<Complex<i64>, bool> = HashMap::new();
+    let mut tiles: HashMap<Complex<i64>, bool> = HashMap::new();
 
-    //{
-        //let first = pc.step_loop();
-        ////match first {
-            ////Err(src::InterpreterError::Terminated) => { break; },
-            ////Err(_) => { panic!() },
-            ////Ok(Some())
+    loop {
+        let first = pc.step_loop();
+        match first {
+            Err(src::InterpreterError::Terminated) => { break; },
+            Err(_) => { panic!() },
+            Ok(color) => { tiles.insert(pos, color != 0) },
+        };
 
-        ////}
-        //if let Ok(Some(color)) = pc.step_loop() {
-            //tiles.insert(pos, color != 0);
-        //}
-        //let res_y = pc.step_loop().unwrap().unwrap();
-        
-        
-    //}
+        // Only works as long as turn_direction is in {0, 1}
+        let second = pc.step_loop();
+        match second {
+            Err(src::InterpreterError::Terminated) => { break; },
+            Err(_) => { panic!() },
+            Ok(turn_direction) => { dir = dir * Complex::new(0, 2*turn_direction - 1)},
+        };
 
-//}
+        pos += dir;
+        pc.input_buffer.push_back(*tiles.get(&pos).unwrap_or(&false) as i64);
+    }
+
+    println!("Number of tiles painted at least once: {}", tiles.len());
+    // 2418, correct!
+
+}
 
 fn execute(data: Vec<src::VALUE>, input_buffer: VecDeque<src::VALUE>) -> Result<Vec<src::VALUE>, src::InterpreterError> {
     let mut pc = Interpreter::new(data.to_owned(), input_buffer);
