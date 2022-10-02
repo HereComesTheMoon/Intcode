@@ -8,7 +8,7 @@ mod src;
 fn main() {
     execute(vec![99], vec![].into());
 
-    day11a()
+    day11b()
 
 }
 
@@ -44,8 +44,64 @@ fn day11a() {
 
     println!("Number of tiles painted at least once: {}", tiles.len());
     // 2418, correct!
-
 }
+
+fn day11b() {
+    let data = string_to_code(include_str!("../data/day11.txt"));
+
+    let mut pos: Complex<i64> = Complex::new(0, 0);
+    let mut dir: Complex<i64> = Complex::new(-1, 0);
+    let mut pc = Interpreter::new(data, vec![1].into());
+    //let mut output = vec![];
+
+    let mut tiles: HashMap<Complex<i64>, bool> = HashMap::new();
+
+    loop {
+        let first = pc.step_loop();
+        match first {
+            Err(src::InterpreterError::Terminated) => { break; },
+            Err(_) => { panic!() },
+            Ok(color) => { tiles.insert(pos, color != 0) },
+        };
+
+        // Only works as long as turn_direction is in {0, 1}
+        let second = pc.step_loop();
+        match second {
+            Err(src::InterpreterError::Terminated) => { break; },
+            Err(_) => { panic!() },
+            Ok(turn_direction) => { dir = dir * Complex::new(0, 1 - 2*turn_direction )},
+        };
+
+        pos += dir;
+        pc.input_buffer.push_back(*tiles.get(&pos).unwrap_or(&false) as i64);
+    }
+
+    println!("Number of tiles painted at least once: {}", tiles.len());
+    
+    let minx = tiles.keys().map(|&x| x.re as i32).min().unwrap();
+    let miny = tiles.keys().map(|&x| x.im as i32).min().unwrap();
+    let maxx = tiles.keys().map(|&x| x.re as i32).max().unwrap();
+    let maxy = tiles.keys().map(|&x| x.im as i32).max().unwrap();
+
+    println!("({}, {}), ({}, {})", minx, miny, maxx, maxy);
+    let mut grid: Vec<Vec<char>> = vec![vec!['.'; (miny.abs()+maxy+1) as usize]; (minx.abs()+maxx+1) as usize];
+
+    for (z, &color) in tiles.iter() {
+        let paint = if color { '#' } else { '.' };
+        grid[z.re as usize][z.im as usize] = paint;
+    }
+    println!("{}, {}", grid.len(), grid[0].len());
+    for row in grid {
+        for x in row {
+            print!("{}", x);
+        }
+        println!();
+    }
+
+
+    // 2418, correct!
+}
+
 
 fn execute(data: Vec<src::VALUE>, input_buffer: VecDeque<src::VALUE>) -> Result<Vec<src::VALUE>, src::InterpreterError> {
     let mut pc = Interpreter::new(data.to_owned(), input_buffer);
