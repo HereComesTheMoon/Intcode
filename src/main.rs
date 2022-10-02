@@ -8,17 +8,19 @@ mod src;
 fn main() {
     execute(vec![99], vec![].into());
 
-    day11b()
+    day13a()
 
+}
+
+fn day13a() {
 }
 
 fn day11a() {
     let data = string_to_code(include_str!("../data/day11.txt"));
 
     let mut pos: Complex<i64> = Complex::new(0, 0);
-    let mut dir: Complex<i64> = Complex::new(1, 0);
+    let mut dir: Complex<i64> = Complex::new(-1, 0);
     let mut pc = Interpreter::new(data, vec![0].into());
-    //let mut output = vec![];
 
     let mut tiles: HashMap<Complex<i64>, bool> = HashMap::new();
 
@@ -35,7 +37,7 @@ fn day11a() {
         match second {
             Err(src::InterpreterError::Terminated) => { break; },
             Err(_) => { panic!() },
-            Ok(turn_direction) => { dir = dir * Complex::new(0, 2*turn_direction - 1)},
+            Ok(turn_direction) => { dir = dir * Complex::new(0, 1 - 2*turn_direction)},
         };
 
         pos += dir;
@@ -50,9 +52,9 @@ fn day11b() {
     let data = string_to_code(include_str!("../data/day11.txt"));
 
     let mut pos: Complex<i64> = Complex::new(0, 0);
+    // Starting direction. Starting with -1, 0 results in grid extending in the nicest direction
     let mut dir: Complex<i64> = Complex::new(-1, 0);
     let mut pc = Interpreter::new(data, vec![1].into());
-    //let mut output = vec![];
 
     let mut tiles: HashMap<Complex<i64>, bool> = HashMap::new();
 
@@ -69,27 +71,25 @@ fn day11b() {
         match second {
             Err(src::InterpreterError::Terminated) => { break; },
             Err(_) => { panic!() },
-            Ok(turn_direction) => { dir = dir * Complex::new(0, 1 - 2*turn_direction )},
+            Ok(turn_direction) => { dir = dir * Complex::new(0, 1 - 2*turn_direction)},
         };
 
         pos += dir;
         pc.input_buffer.push_back(*tiles.get(&pos).unwrap_or(&false) as i64);
     }
 
-    println!("Number of tiles painted at least once: {}", tiles.len());
-    
     let minx = tiles.keys().map(|&x| x.re as i32).min().unwrap();
     let miny = tiles.keys().map(|&x| x.im as i32).min().unwrap();
     let maxx = tiles.keys().map(|&x| x.re as i32).max().unwrap();
     let maxy = tiles.keys().map(|&x| x.im as i32).max().unwrap();
 
-    println!("({}, {}), ({}, {})", minx, miny, maxx, maxy);
     let mut grid: Vec<Vec<char>> = vec![vec!['.'; (miny.abs()+maxy+1) as usize]; (minx.abs()+maxx+1) as usize];
 
     for (z, &color) in tiles.iter() {
         let paint = if color { '#' } else { '.' };
         grid[z.re as usize][z.im as usize] = paint;
     }
+
     println!("{}, {}", grid.len(), grid[0].len());
     for row in grid {
         for x in row {
@@ -97,9 +97,6 @@ fn day11b() {
         }
         println!();
     }
-
-
-    // 2418, correct!
 }
 
 
