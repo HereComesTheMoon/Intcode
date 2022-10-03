@@ -1,18 +1,102 @@
 use src::Interpreter;
 use std::collections::VecDeque;
 use std::collections::HashMap;
+use std::fmt::Debug;
+use std::fmt::Display;
 use num_complex::Complex;
 
 mod src;
 
 fn main() {
-    execute(vec![99], vec![].into());
-
-    day13a()
+    day13::day13a()
 
 }
 
-fn day13a() {
+
+mod day13 {
+    use super::*;
+
+    #[derive(Clone, PartialEq)]
+    enum Tile {
+        Empty,
+        Wall,
+        Block,
+        Paddle,
+        Ball,
+    }
+
+    impl Display for Tile {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{}", 
+                   match *self {
+                       Tile::Empty => ".",
+                       Tile::Wall => "#",
+                       Tile::Block => "X",
+                       Tile::Paddle => "—",
+                       Tile::Ball => "O",
+                   })
+        }
+    }
+
+    impl Debug for Tile {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{}", 
+                   match *self {
+                       Tile::Empty => ".",
+                       Tile::Wall => "#",
+                       Tile::Block => "X",
+                       Tile::Paddle => "—",
+                       Tile::Ball => "O",
+                   })
+        }
+    }
+
+    fn print_grid(grid: &Vec<Vec<Tile>>) {
+        for row in grid {
+            for x in row {
+                print!("{}", x);
+            }
+            println!();
+        }
+    }
+
+    pub fn day13a() {
+        let data = string_to_code(include_str!("../data/day13.txt"));
+        let mut pc = Interpreter::new(data, vec![].into());
+
+
+        let mut grid = vec![vec![Tile::Empty; 46]; 26];
+        
+        loop {
+            let posx = match pc.step_loop() {
+                Err(src::InterpreterError::Terminated) => { break; },
+                Err(_) => { panic!() },
+                Ok(val) => { val as usize },
+            };
+            let posy = pc.step_loop().unwrap() as usize;
+            let tile_tyle: Tile = match pc.step_loop().unwrap() {
+                0 => { Tile::Empty },
+                1 => { Tile::Wall },
+                2 => { Tile::Block },
+                3 => { Tile::Paddle },
+                4 => { Tile::Ball },
+                _ => { panic!() },
+            };
+
+            grid[posy][posx] = tile_tyle;
+        }
+
+        print_grid(&grid);
+
+        let count_blocks = grid
+            .iter()
+            .flatten()
+            .filter(|&x| *x == Tile::Block )
+            .count();
+
+        println!("Number blocks: {}", count_blocks); // Works: 324
+    }
+
 }
 
 fn day11a() {
