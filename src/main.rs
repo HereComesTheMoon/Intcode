@@ -3,12 +3,14 @@ use std::collections::VecDeque;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fmt::Display;
+use std::io;
 use num_complex::Complex;
 
 mod src;
 
 fn main() {
-    day13::day13a()
+    let mut game = day13::Game::new();
+    game.step();
 
 }
 
@@ -19,7 +21,7 @@ mod day13 {
     const SIZE_X: usize = 46;
     const SIZE_Y: usize = 26;
 
-    struct Game {
+    pub struct Game {
         pc: src::Interpreter,
         score: i64,
         grid: [[Tile; 46]; 26],
@@ -66,6 +68,44 @@ mod day13 {
                 score: 0,
                 grid,
                 number_blocks,
+            }
+        }
+
+
+        pub fn step(&mut self) {
+            loop {
+                let res = self.pc.step_loop();
+
+                let posx = match res {
+                    Err(src::InterpreterError::NoInputError) => { 
+                        print!("{}", self);
+                        let mut input: String = String::new();
+                        io::stdin().read_line(&mut input).unwrap();
+                        self.pc.input_buffer.push_back(input.trim().parse().unwrap_or(0));
+                        continue;
+                    }
+                    Err(_) => { panic!() }
+                    Ok(val) => { val }
+                };
+                let posy = self.pc.step_loop().unwrap();
+                let val = self.pc.step_loop().unwrap();
+
+                if (posx, posy) == (-1, 0) { 
+                    self.score = val;
+                } else {
+                    let val = match val {
+                        0 => { Tile::Empty },
+                        1 => { Tile::Wall },
+                        2 => { Tile::Block },
+                        3 => { Tile::Paddle },
+                        4 => { Tile::Ball },
+                        _ => { panic!() },
+                    };
+                    if self.grid[posy as usize][posx as usize] == Tile::Block {
+                        self.number_blocks -= 1;
+                    }
+                    self.grid[posy as usize][posx as usize] = val;
+                }
             }
         }
     }
@@ -124,7 +164,6 @@ mod day13 {
                    })
         }
     }
-
 
     pub fn day13a() {
         let game = Game::new();
