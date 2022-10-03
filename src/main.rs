@@ -10,12 +10,13 @@ mod src;
 
 fn main() {
     let mut game = day13::Game::new();
-    game.step();
-
+    game.day13b();
 }
 
 
 mod day13 {
+    use std::process::exit;
+
     use super::*;
 
     const SIZE_X: usize = 46;
@@ -24,8 +25,10 @@ mod day13 {
     pub struct Game {
         pc: src::Interpreter,
         score: i64,
-        grid: [[Tile; 46]; 26],
+        grid: [[Tile; SIZE_X]; SIZE_Y],
         number_blocks: usize,
+        pos_ball: (usize, usize),
+        pos_paddle: (usize, usize),
     }
 
     impl Game {
@@ -68,23 +71,36 @@ mod day13 {
                 score: 0,
                 grid,
                 number_blocks,
+                pos_ball: (0,0),
+                pos_paddle: (0,0),
             }
         }
 
-
-        pub fn step(&mut self) {
+        pub fn day13b(&mut self) {
             loop {
                 let res = self.pc.step_loop();
 
                 let posx = match res {
                     Err(src::InterpreterError::NoInputError) => { 
+                        //let mut input: String = String::new();
+                        assert!(self.pc.input_buffer.is_empty());
                         print!("{}", self);
-                        let mut input: String = String::new();
-                        io::stdin().read_line(&mut input).unwrap();
-                        self.pc.input_buffer.push_back(input.trim().parse().unwrap_or(0));
+                        print!("Ball: {:?}, Paddle: {:?}", self.pos_ball, self.pos_paddle);
+                        //io::stdin().read_line(&mut input).unwrap();
+                        
+                        let next_in = if self.pos_paddle.0 > self.pos_ball.0 {
+                            -1
+                        } else if self.pos_paddle == self.pos_ball {
+                            0
+                        } else {
+                            1
+                        };
+                        //let nextin = input.trim().parse().unwrap_or(next_in);
+
+                        self.pc.input_buffer.push_back(next_in);
                         continue;
                     }
-                    Err(_) => { panic!() }
+                    Err(src::InterpreterError::Terminated) => { println!("FINAL SCORE: {}", self.score); exit(0) }
                     Ok(val) => { val }
                 };
                 let posy = self.pc.step_loop().unwrap();
@@ -103,6 +119,12 @@ mod day13 {
                     };
                     if self.grid[posy as usize][posx as usize] == Tile::Block {
                         self.number_blocks -= 1;
+                    }
+                    if val == Tile::Ball {
+                        self.pos_ball = (posx as usize, posy as usize);
+                    }
+                    if val == Tile::Paddle {
+                        self.pos_paddle = (posx as usize, posy as usize);
                     }
                     self.grid[posy as usize][posx as usize] = val;
                 }
@@ -170,8 +192,6 @@ mod day13 {
         print!("{}", game);
     }
 
-    pub fn day13b() {
-    }
 
 }
 
