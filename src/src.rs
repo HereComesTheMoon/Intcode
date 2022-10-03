@@ -1,6 +1,5 @@
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display};
-use std::io;
 use std::error::Error;
 
 // TODO: Decide if want to keep this, or just make everything i64
@@ -9,8 +8,7 @@ pub type VALUE = i64;
 #[derive(Copy, Clone, Debug)]
 pub enum InterpreterError {
     Terminated,
-    IoError,
-    ParseError,
+    NoInputError,
 }
 
 impl Display for InterpreterError {
@@ -180,8 +178,8 @@ fn op_mul(pc: &mut Interpreter) {
 // Gives user greater control: They can match the no_input error, and add input by
 // pushing to the input_buffer
 fn op_in(pc: &mut Interpreter) {
-    print!("Reading input... ");
-    let mut input = String::new();
+    //print!("Reading input... ");
+    //let mut input = String::new();
 
     if let Some(val) = pc.input_buffer.pop_front() {
         println!("{}.", val);
@@ -190,27 +188,29 @@ fn op_in(pc: &mut Interpreter) {
         return
     }
 
-    println!("Input buffer empty. Use stdin. Waiting for input: ");
-    if let Err(e) = io::stdin().read_line(&mut input) {
-        println!("Error: Interpreter failed to read input: {}", e);
-        pc.error = Some(InterpreterError::IoError);
-        return
-    } 
+    println!("Input buffer empty.");
+    pc.error = Some(InterpreterError::NoInputError);
+    return 
+    //if let Err(e) = io::stdin().read_line(&mut input) {
+        //println!("Error: Interpreter failed to read input: {}", e);
+        //pc.error = Some(InterpreterError::NoInputError);
+        //return
+    //} 
 
-    if let Ok(num) = input.trim().parse::<VALUE>() {
-        println!("{}.", num);
-        pc.code[pc.param_indices[0]] = num;
-        pc.ip += 2;
-        return
-    } 
+    //if let Ok(num) = input.trim().parse::<VALUE>() {
+        //println!("{}.", num);
+        //pc.code[pc.param_indices[0]] = num;
+        //pc.ip += 2;
+        //return
+    //} 
 
-    println!("Error: Interpreter failed to parse input.");
-    pc.error = Some(InterpreterError::ParseError);
+    //println!("Error: Interpreter failed to parse input.");
+    //pc.error = Some(InterpreterError::ParseError);
 }
 
 fn op_out(pc: &mut Interpreter) {
     let res = pc.code[pc.param_indices[0]];
-    println!("OUTPUT: {}", res);
+    //println!("OUTPUT: {}", res);
 
     pc.last_output = Some(res);
     pc.ip += 2;
