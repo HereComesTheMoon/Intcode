@@ -16,7 +16,81 @@ fn main() {
 mod day13 {
     use super::*;
 
-    #[derive(Clone, PartialEq)]
+    const SIZE_X: usize = 46;
+    const SIZE_Y: usize = 26;
+
+    struct Game {
+        pc: src::Interpreter,
+        score: i64,
+        grid: [[Tile; 46]; 26],
+        number_blocks: usize,
+    }
+
+    impl Game {
+        pub fn new() -> Game {
+            let mut data = string_to_code(include_str!("../data/day13.txt"));
+            data[0] = 2;
+            let mut pc = Interpreter::new(data, vec![].into());
+
+            let mut grid = [[Tile::Empty; 46]; 26];
+
+            loop {
+                let posx = match pc.step_loop() {
+                    //Err(src::InterpreterError::NoInputError) => { break; },
+                    Err(_) => { panic!() },
+                    Ok(val) => { val },
+                };
+                let posy = pc.step_loop().unwrap();
+                let tile_tyle: Tile = match pc.step_loop().unwrap() {
+                    0 => { Tile::Empty },
+                    1 => { Tile::Wall },
+                    2 => { Tile::Block },
+                    3 => { Tile::Paddle },
+                    4 => { Tile::Ball },
+                    _ => { panic!() },
+                };
+
+                if (posx, posy) == (-1, 0) { break; }
+
+                grid[posy as usize][posx as usize] = tile_tyle;
+            }
+
+            let number_blocks = grid
+                .iter()
+                .flatten()
+                .filter(|&x| *x == Tile::Block )
+                .count();
+
+            Game {
+                pc,
+                score: 0,
+                grid,
+                number_blocks,
+            }
+        }
+    }
+
+    impl Display for Game {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+
+            let mut s: String = format!("{:-^SIZE_X$}\n", format!("Score: {}, Blocks left: {}", self.score, self.number_blocks));
+
+            let ss: String = self.grid
+                .iter()
+                .map(|&row| row
+                     .iter()
+                     .map(|&x| x
+                          .to_string())
+                     .collect::<String>() + "\n")
+                .collect();
+
+            s.extend(ss.chars());
+
+            write!(f, "{}", s)
+        }
+    }
+
+    #[derive(Clone, Copy, PartialEq)]
     enum Tile {
         Empty,
         Wall,
@@ -51,50 +125,13 @@ mod day13 {
         }
     }
 
-    fn print_grid(grid: &Vec<Vec<Tile>>) {
-        for row in grid {
-            for x in row {
-                print!("{}", x);
-            }
-            println!();
-        }
-    }
 
     pub fn day13a() {
-        let data = string_to_code(include_str!("../data/day13.txt"));
-        let mut pc = Interpreter::new(data, vec![].into());
+        let game = Game::new();
+        print!("{}", game);
+    }
 
-
-        let mut grid = vec![vec![Tile::Empty; 46]; 26];
-        
-        loop {
-            let posx = match pc.step_loop() {
-                Err(src::InterpreterError::Terminated) => { break; },
-                Err(_) => { panic!() },
-                Ok(val) => { val as usize },
-            };
-            let posy = pc.step_loop().unwrap() as usize;
-            let tile_tyle: Tile = match pc.step_loop().unwrap() {
-                0 => { Tile::Empty },
-                1 => { Tile::Wall },
-                2 => { Tile::Block },
-                3 => { Tile::Paddle },
-                4 => { Tile::Ball },
-                _ => { panic!() },
-            };
-
-            grid[posy][posx] = tile_tyle;
-        }
-
-        print_grid(&grid);
-
-        let count_blocks = grid
-            .iter()
-            .flatten()
-            .filter(|&x| *x == Tile::Block )
-            .count();
-
-        println!("Number blocks: {}", count_blocks); // Works: 324
+    pub fn day13b() {
     }
 
 }
