@@ -8,12 +8,18 @@ use num_complex::Complex;
 mod src;
 
 fn main() {
-    let mut game = day15::Game::new();
+    //let mut game = day15::Game::new();
     //game.day13b();
 
 
-    let dist = game.dfs().unwrap();
-    println!("Distance to oxygen generator: {}", dist);
+    day15::day15b();
+    //let dist = game.dfs().unwrap();
+    //println!("Distance to oxygen generator: {}", dist);
+
+    //// Reset game:
+    //let dist = game.dfs_b();
+    //println!("Maximal distance from oxygen generator: {}", dist);
+
 }
 
 mod day15 {
@@ -43,7 +49,7 @@ mod day15 {
 
     pub struct Game {
         pc: src::Interpreter,
-        grid: [[(Tile, usize); SIZE.0]; SIZE.1],
+        pub grid: [[(Tile, usize); SIZE.0]; SIZE.1],
         pos: (usize, usize),
     }
 
@@ -114,7 +120,73 @@ mod day15 {
             }
             None
         }
+
+        pub fn dfs_b(&mut self) -> usize {
+            println!("{}", self);
+            let mut maxi = 0;
+            for d in [Dir::N, Dir::S, Dir::W, Dir::E] {
+                let prev = self.pos;
+
+                let next = match d {
+                    Dir::N => {(prev.0 + 0, prev.1 - 1)},
+                    Dir::S => {(prev.0 + 0, prev.1 + 1)},
+                    Dir::W => {(prev.0 - 1, prev.1 + 0)},
+                    Dir::E => {(prev.0 + 1, prev.1 + 0)},
+                };
+
+
+                if let Tile::Unknown = self.grid[next.1][next.0].0 {
+                    self.pc.input_buffer.push_back(d as i64);
+
+                    let val_prev = self.grid[prev.1][prev.0].1;
+                    let res = match self.pc.step_loop() {
+                        Err(_) => { panic!() },
+                        Ok(0) => { Tile::Wall },
+                        Ok(1) => { Tile::Empty },
+                        Ok(2) => { Tile::Goal },
+                        Ok(_) => { panic!() }
+                    };
+
+                    self.grid[next.1][next.0] = (res, val_prev + 1);
+
+                    if res == Tile::Wall {
+                        continue;
+                    }
+
+                    self.pos = next;
+
+                    maxi = maxi.max(1 + self.dfs_b());
+
+
+                    self.pc.input_buffer.push_back(
+                        match d {
+                            Dir::N => Dir::S as i64,
+                            Dir::S => Dir::N as i64,
+                            Dir::W => Dir::E as i64,
+                            Dir::E => Dir::W as i64,
+                        });
+
+                    self.pc.step_loop().unwrap();
+                    self.pos = prev;
+                }
+            }
+            maxi
+        }
+
     }
+
+    pub fn day15b() {
+        let mut game = Game::new();
+        let dist = game.dfs().unwrap();
+        println!("Distance to oxygen generator: {}", dist);
+
+        // Reset game:
+        println!("{}", "Penis");
+        game.grid = [[(Tile::Unknown, 0usize); SIZE.0]; SIZE.1];
+        let dist = game.dfs_b();
+        println!("Maximal distance from oxygen generator: {}", dist);
+    }
+
 
     impl Display for Game {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
