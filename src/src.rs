@@ -182,7 +182,7 @@ fn op_in(pc: &mut Interpreter) {
     //let mut input = String::new();
 
     if let Some(val) = pc.input_buffer.pop_front() {
-        println!("{}.", val);
+        //println!("{}.", val);
         pc.code[pc.param_indices[0]] = val;
         pc.ip += 2;
         return

@@ -3,147 +3,112 @@ use std::collections::VecDeque;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fmt::Display;
+use std::io;
 use num_complex::Complex;
 
 mod src;
 
 fn main() {
-    let mut game = day15::Game::new();
-    //game.day13b();
-
-
-    let dist = game.dfs().unwrap();
-    println!("Distance to oxygen generator: {}", dist);
+    let mut game = day13::Game::new();
+    game.day13b();
 }
 
 mod day15 {
+    use std::ops;
+
     use super::*;
 
     //const SIZE_X: usize = 46;
     //const SIZE_Y: usize = 26;
-    const SIZE: (usize, usize) = (41, 41);
-    //const CENTER: (usize, usize) = (SIZE.0 / 2, SIZE.1 / 2);
-    const CENTER: (usize, usize) = (21, 21);
+    const SIZE: (usize, usize) = (50, 50);
+    const CENTER: (usize, usize) = (SIZE.0 / 2, SIZE.1 / 2);
 
     #[derive(Clone, Copy)]
     pub enum Dir {
-        N = 1,
-        S = 2,
-        W = 3,
-        E = 4,
+        N,
+        E,
+        S,
+        W,
     }
 
-    #[derive(Clone, Copy, PartialEq)]
+    impl ops::Add<Dir> for (usize, usize) {
+        type Output = (usize, usize);
+        fn add(self, rhs: Dir) -> Self::Output {
+            match rhs {
+                Dir::N => { (self.0 + 0, self.1 - 1) },
+                Dir::E => { (self.0 + 1, self.1 + 0) },
+                Dir::S => { (self.0 + 0, self.1 + 1) },
+                Dir::W => { (self.0 - 1, self.1 + 0) },
+            }
+        }
+    }
+
+    impl ops::Sub<Dir> for (usize, usize) {
+        type Output = (usize, usize);
+        fn sub(self, rhs: Dir) -> Self::Output {
+            match rhs {
+                Dir::N => { (self.0 + 0, self.1 + 1) },
+                Dir::E => { (self.0 - 1, self.1 + 0) },
+                Dir::S => { (self.0 + 0, self.1 - 1) },
+                Dir::W => { (self.0 + 1, self.1 + 0) },
+            }
+        }
+    }
+
     pub enum Tile {
-        Empty,
+        Empty(usize),
         Wall,
-        Goal,
+        Goal(usize),
         Unknown,
     }
 
     pub struct Game {
         pc: src::Interpreter,
-        grid: [[(Tile, usize); SIZE.0]; SIZE.1],
+        score: i64,
+        grid: [[Tile; SIZE.0]; SIZE.1],
         pos: (usize, usize),
     }
 
     impl Game {
-        pub fn new() -> Game {
-            let data = string_to_code(include_str!("../data/day15.txt"));
-            let pc = Interpreter::new(data, vec![].into());
+        pub fn step(&mut self, dir: Dir) -> Tile {
+            assert!(self.pc.input_buffer.is_empty());
+            self.pc.input_buffer.push_back(dir as i64);
 
-            Game {
-                pc,
-                grid: [[(Tile::Unknown, 0usize); SIZE.0]; SIZE.1],
-                pos: (CENTER.0, CENTER.1),
-            }
+            let res = match self.pc.step_loop() {
+                Err(_) => { panic!() },
+                Ok(0) => { Tile::Wall },
+                Ok(1) => { Tile::Empty(0) },
+                Ok(2) => { Tile::Goal(0) },
+                Ok(_) => { panic!() }
+            };
+        
+            res
+            //grid[pos.0][pos.1]
         }
 
+        pub fn bfs(&mut self) {
+            //let mut q = VecDeque::new();
+        }
 
-        pub fn dfs(&mut self) -> Option<usize> {
-            println!("{}", self);
-            for d in [Dir::N, Dir::S, Dir::W, Dir::E] {
+        pub fn dfs(&mut self) {
+            for d in [Dir::N, Dir::E, Dir::S, Dir::W] {
                 let prev = self.pos;
+                let next = self.pos + d;
 
-                let next = match d {
-                    Dir::N => {(prev.0 + 0, prev.1 - 1)},
-                    Dir::S => {(prev.0 + 0, prev.1 + 1)},
-                    Dir::W => {(prev.0 - 1, prev.1 + 0)},
-                    Dir::E => {(prev.0 + 1, prev.1 + 0)},
-                };
-
-
-                if let Tile::Unknown = self.grid[next.1][next.0].0 {
-                    self.pc.input_buffer.push_back(d as i64);
-
-                    let val_prev = self.grid[prev.1][prev.0].1;
-                    let res = match self.pc.step_loop() {
-                        Err(_) => { panic!() },
-                        Ok(0) => { Tile::Wall },
-                        Ok(1) => { Tile::Empty },
-                        Ok(2) => { Tile::Goal },
-                        Ok(_) => { panic!() }
-                    };
-
-                    self.grid[next.1][next.0] = (res, val_prev + 1);
-
-                    if res == Tile::Wall {
-                        continue;
-                    }
-
-                    self.pos = next;
-                    if res == Tile::Goal {
-                        return Some(val_prev + 1);
-                    }
-
-                    if let Some(distance) = self.dfs() {
-                        return Some(distance);
-                    }
-
-                    self.pc.input_buffer.push_back(
-                        match d {
-                            Dir::N => Dir::S as i64,
-                            Dir::S => Dir::N as i64,
-                            Dir::W => Dir::E as i64,
-                            Dir::E => Dir::W as i64,
-                        });
-
-                    self.pc.step_loop().unwrap();
-                    self.pos = prev;
+                match self.grid[next.1][next.0] {
+                    Tile::Unknown => {},
                 }
+                if let Tile::Unknown = self.grid[next.1][next.0] {
+                    continue
+                }
+                self.grid[next.1][next.0] = self.grid[prev.1][prev.0] + 1;
+
+                self.pos = next;
+                self.dfs();
+                self.pos = next - d;
             }
-            None
         }
     }
-
-    impl Display for Game {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-
-            let ss: String = self.grid
-                .iter()
-                .map(|&row| row
-                     .iter()
-                     .map(|&x| x.0
-                          .to_string())
-                     .collect::<String>() + "\n")
-                .collect();
-
-            write!(f, "{}", ss)
-        }
-    }
-
-    impl Display for Tile {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            write!(f, "{}", 
-                   match *self {
-                       Tile::Empty => " ",
-                       Tile::Wall => "#",
-                       Tile::Unknown => ".",
-                       Tile::Goal => "X",
-                   })
-        }
-    }
-
 }
 
 mod day13 {
