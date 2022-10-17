@@ -8,6 +8,7 @@ use num_complex::Complex;
 mod src;
 
 fn main() {
+    day17::camera();
 }
 
 mod day17 {
@@ -308,6 +309,7 @@ mod day13 {
                         continue;
                     }
                     Err(src::InterpreterError::Terminated) => { println!("FINAL SCORE: {}", self.score); exit(0) }
+                    Err(_) => {panic!()}
                     Ok(val) => { val }
                 };
                 let posy = self.pc.step_loop().unwrap();
@@ -738,6 +740,13 @@ mod tests {
         let given = execute(string_to_code(include_str!("../data/day9.txt")), vec![1].into()).unwrap();
 
         assert_eq!(wanted, given);
+    }
+
+    #[test]
+    fn wrong_code() {
+        let mut pc = Interpreter::new(vec![-1, 0, 99], [].into());
+
+        pc.step();
     }
 
     #[test]
