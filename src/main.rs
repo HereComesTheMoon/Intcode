@@ -8,20 +8,6 @@ use num_complex::Complex;
 mod src;
 
 fn main() {
-    //let mut game = day15::Game::new();
-    //game.day13b();
-
-
-    //day15::day15b();
-    //let dist = game.dfs().unwrap();
-    //println!("Distance to oxygen generator: {}", dist);
-
-    //// Reset game:
-    //let dist = game.dfs_b();
-    //println!("Maximal distance from oxygen generator: {}", dist);
-
-    day17::camera();
-
 }
 
 mod day17 {
@@ -530,6 +516,8 @@ fn string_to_code(code_str: &str) -> Vec<src::VALUE> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use src::{Interpreter, InterpreterError};
+
     const DAY2A_RESULT: src::VALUE = 6087827;
     const DAY2B_RESULT: src::VALUE = 5379;
     const DAY5A_RESULT: src::VALUE = 5182797;
@@ -750,6 +738,25 @@ mod tests {
         let given = execute(string_to_code(include_str!("../data/day9.txt")), vec![1].into()).unwrap();
 
         assert_eq!(wanted, given);
+    }
+
+    #[test]
+    fn errors() {
+        let mut pc = Interpreter::new(vec![3, 0, 99], [].into());
+
+        let err = pc.step().unwrap_err();
+
+        assert_eq!(err, InterpreterError::NoInputError);
+
+        pc.input_buffer.push_back(-1);
+
+        let nothing = pc.step().unwrap();
+
+        assert_eq!(nothing, None);
+
+        let err = pc.step().unwrap_err();
+
+        assert_eq!(err, InterpreterError::Terminated);
     }
 
     #[test]

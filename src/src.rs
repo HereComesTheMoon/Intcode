@@ -5,7 +5,7 @@ use std::error::Error;
 // TODO: Decide if want to keep this, or just make everything i64 from the get-go
 pub type VALUE = i64;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum InterpreterError {
     Terminated,
     NoInputError,
@@ -14,7 +14,10 @@ pub enum InterpreterError {
 impl Display for InterpreterError {
     // FIXME: Rewrite the fmt here.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{{ File: {}, Line: {} }}", file!(), line!())
+        match *self {
+            InterpreterError::Terminated => write!(f, "Terminated"),
+            InterpreterError::NoInputError => write!(f, "No input"),
+        }
     }
 }
 
