@@ -12,7 +12,7 @@ fn main() {
     //game.day13b();
 
 
-    day15::day15b();
+    //day15::day15b();
     //let dist = game.dfs().unwrap();
     //println!("Distance to oxygen generator: {}", dist);
 
@@ -20,6 +20,23 @@ fn main() {
     //let dist = game.dfs_b();
     //println!("Maximal distance from oxygen generator: {}", dist);
 
+    day17::camera();
+
+}
+
+mod day17 {
+    use super::*;
+    pub fn camera() {
+        let data = string_to_code(include_str!("../data/day17.txt"));
+        let mut pc = Interpreter::new(data, vec![].into());
+
+        loop {
+            let c = pc
+                .step_loop()
+                .unwrap() as u8 as char;
+            print!("{}", c);
+        }
+    }
 }
 
 mod day15 {
