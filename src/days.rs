@@ -25,13 +25,10 @@ pub mod day17 {
     }
 }
 
-mod day15 {
+pub mod day15 {
     use super::*;
 
-    //const SIZE_X: usize = 46;
-    //const SIZE_Y: usize = 26;
     const SIZE: (usize, usize) = (41, 41);
-    //const CENTER: (usize, usize) = (SIZE.0 / 2, SIZE.1 / 2);
     const CENTER: (usize, usize) = (21, 21);
 
     #[derive(Clone, Copy)]
@@ -69,7 +66,7 @@ mod day15 {
         }
 
 
-        pub fn dfs(&mut self) -> Option<usize> {
+        fn dfs(&mut self) -> Option<usize> {
             println!("{}", self);
             for d in [Dir::N, Dir::S, Dir::W, Dir::E] {
                 let prev = self.pos;
@@ -124,7 +121,7 @@ mod day15 {
             None
         }
 
-        pub fn dfs_b(&mut self) -> usize {
+        fn dfs_b(&mut self) -> usize {
             println!("{}", self);
             let mut maxi = 0;
             for d in [Dir::N, Dir::S, Dir::W, Dir::E] {
@@ -178,6 +175,12 @@ mod day15 {
 
     }
 
+    pub fn day15a() {
+        let mut game = Game::new();
+        let dist = game.dfs().unwrap();
+        println!("Distance to oxygen generator: {}", dist);
+    }
+
     pub fn day15b() {
         let mut game = Game::new();
         let dist = game.dfs().unwrap();
@@ -220,7 +223,7 @@ mod day15 {
 
 }
 
-mod day13 {
+pub mod day13 {
     use std::{process::exit, time::Duration};
 
     use super::*;
@@ -282,7 +285,7 @@ mod day13 {
             }
         }
 
-        pub fn day13b(&mut self) {
+        fn solve(&mut self) {
             loop {
                 let res = self.pc.step_loop();
                 //std::thread::sleep(Duration::new(0, 1_000_000));
@@ -400,90 +403,98 @@ mod day13 {
         print!("{}", game);
     }
 
+    pub fn day13b() {
+        let mut game = Game::new();
+        game.solve();
+    }
+
 
 }
 
-fn day11a() {
-    let data = string_to_code(include_str!("../data/day11.txt"));
+pub mod day11 {
+    use super::*;
+    pub fn day11a() {
+        let data = string_to_code(include_str!("../data/day11.txt"));
 
-    let mut pos: Complex<i64> = Complex::new(0, 0);
-    let mut dir: Complex<i64> = Complex::new(-1, 0);
-    let mut pc = Interpreter::new(data, vec![0].into());
+        let mut pos: Complex<i64> = Complex::new(0, 0);
+        let mut dir: Complex<i64> = Complex::new(-1, 0);
+        let mut pc = Interpreter::new(data, vec![0].into());
 
-    let mut tiles: HashMap<Complex<i64>, bool> = HashMap::new();
+        let mut tiles: HashMap<Complex<i64>, bool> = HashMap::new();
 
-    loop {
-        let first = pc.step_loop();
-        match first {
-            Err(src::InterpreterError::Terminated) => { break; },
-            Err(_) => { panic!() },
-            Ok(color) => { tiles.insert(pos, color != 0) },
-        };
+        loop {
+            let first = pc.step_loop();
+            match first {
+                Err(src::InterpreterError::Terminated) => { break; },
+                Err(_) => { panic!() },
+                Ok(color) => { tiles.insert(pos, color != 0) },
+            };
 
-        // Only works as long as turn_direction is in {0, 1}
-        let second = pc.step_loop();
-        match second {
-            Err(src::InterpreterError::Terminated) => { break; },
-            Err(_) => { panic!() },
-            Ok(turn_direction) => { dir = dir * Complex::new(0, 1 - 2*turn_direction)},
-        };
+            // Only works as long as turn_direction is in {0, 1}
+            let second = pc.step_loop();
+            match second {
+                Err(src::InterpreterError::Terminated) => { break; },
+                Err(_) => { panic!() },
+                Ok(turn_direction) => { dir = dir * Complex::new(0, 1 - 2*turn_direction)},
+            };
 
-        pos += dir;
-        pc.input_buffer.push_back(*tiles.get(&pos).unwrap_or(&false) as i64);
-    }
-
-    println!("Number of tiles painted at least once: {}", tiles.len());
-    // 2418, correct!
-}
-
-fn day11b() {
-    let data = string_to_code(include_str!("../data/day11.txt"));
-
-    let mut pos: Complex<i64> = Complex::new(0, 0);
-    // Starting direction. Starting with -1, 0 results in grid extending in the nicest direction
-    let mut dir: Complex<i64> = Complex::new(-1, 0);
-    let mut pc = Interpreter::new(data, vec![1].into());
-
-    let mut tiles: HashMap<Complex<i64>, bool> = HashMap::new();
-
-    loop {
-        let first = pc.step_loop();
-        match first {
-            Err(src::InterpreterError::Terminated) => { break; },
-            Err(_) => { panic!() },
-            Ok(color) => { tiles.insert(pos, color != 0) },
-        };
-
-        // Only works as long as turn_direction is in {0, 1}
-        let second = pc.step_loop();
-        match second {
-            Err(src::InterpreterError::Terminated) => { break; },
-            Err(_) => { panic!() },
-            Ok(turn_direction) => { dir = dir * Complex::new(0, 1 - 2*turn_direction)},
-        };
-
-        pos += dir;
-        pc.input_buffer.push_back(*tiles.get(&pos).unwrap_or(&false) as i64);
-    }
-
-    let minx = tiles.keys().map(|&x| x.re as i32).min().unwrap();
-    let miny = tiles.keys().map(|&x| x.im as i32).min().unwrap();
-    let maxx = tiles.keys().map(|&x| x.re as i32).max().unwrap();
-    let maxy = tiles.keys().map(|&x| x.im as i32).max().unwrap();
-
-    let mut grid: Vec<Vec<char>> = vec![vec!['.'; (miny.abs()+maxy+1) as usize]; (minx.abs()+maxx+1) as usize];
-
-    for (z, &color) in tiles.iter() {
-        let paint = if color { '#' } else { '.' };
-        grid[z.re as usize][z.im as usize] = paint;
-    }
-
-    println!("{}, {}", grid.len(), grid[0].len());
-    for row in grid {
-        for x in row {
-            print!("{}", x);
+            pos += dir;
+            pc.input_buffer.push_back(*tiles.get(&pos).unwrap_or(&false) as i64);
         }
-        println!();
+
+        println!("Number of tiles painted at least once: {}", tiles.len());
+        // 2418, correct!
+    }
+
+    pub fn day11b() {
+        let data = string_to_code(include_str!("../data/day11.txt"));
+
+        let mut pos: Complex<i64> = Complex::new(0, 0);
+        // Starting direction. Starting with -1, 0 results in grid extending in the nicest direction
+        let mut dir: Complex<i64> = Complex::new(-1, 0);
+        let mut pc = Interpreter::new(data, vec![1].into());
+
+        let mut tiles: HashMap<Complex<i64>, bool> = HashMap::new();
+
+        loop {
+            let first = pc.step_loop();
+            match first {
+                Err(src::InterpreterError::Terminated) => { break; },
+                Err(_) => { panic!() },
+                Ok(color) => { tiles.insert(pos, color != 0) },
+            };
+
+            // Only works as long as turn_direction is in {0, 1}
+            let second = pc.step_loop();
+            match second {
+                Err(src::InterpreterError::Terminated) => { break; },
+                Err(_) => { panic!() },
+                Ok(turn_direction) => { dir = dir * Complex::new(0, 1 - 2*turn_direction)},
+            };
+
+            pos += dir;
+            pc.input_buffer.push_back(*tiles.get(&pos).unwrap_or(&false) as i64);
+        }
+
+        let minx = tiles.keys().map(|&x| x.re as i32).min().unwrap();
+        let miny = tiles.keys().map(|&x| x.im as i32).min().unwrap();
+        let maxx = tiles.keys().map(|&x| x.re as i32).max().unwrap();
+        let maxy = tiles.keys().map(|&x| x.im as i32).max().unwrap();
+
+        let mut grid: Vec<Vec<char>> = vec![vec!['.'; (miny.abs()+maxy+1) as usize]; (minx.abs()+maxx+1) as usize];
+
+        for (z, &color) in tiles.iter() {
+            let paint = if color { '#' } else { '.' };
+            grid[z.re as usize][z.im as usize] = paint;
+        }
+
+        println!("{}, {}", grid.len(), grid[0].len());
+        for row in grid {
+            for x in row {
+                print!("{}", x);
+            }
+            println!();
+        }
     }
 }
 

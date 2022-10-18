@@ -10,10 +10,15 @@ mod src;
 pub mod days;
 
 fn main() {
-    days::day17::camera();
-    //let mut game = day13::Game::new();
-    //game.day13b();
-    //day15::day15b();
+    //days::day17::camera();
+    
+    days::day15::day15a();
+
+    //days::day11::day11a();
+    //days::day11::day11b();
+
+    //days::day13::day13a();
+    //days::day13::day13b();
 }
 
 fn execute(data: Vec<src::VALUE>, input_buffer: VecDeque<src::VALUE>) -> Result<Vec<src::VALUE>, src::InterpreterError> {
