@@ -1,36 +1,14 @@
 use src::Interpreter;
-use std::collections::VecDeque;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fmt::Display;
 use num_complex::Complex;
 
 use crate::src;
-
-fn execute(data: Vec<src::VALUE>, input_buffer: VecDeque<src::VALUE>) -> Result<Vec<src::VALUE>, src::InterpreterError> {
-    let mut pc = Interpreter::new(data.to_owned(), input_buffer);
-    let mut output = vec![];
-
-    loop {
-        let res = pc.step_loop();
-
-        match res {
-            Err(src::InterpreterError::Terminated) => {break},
-            Err(e) => { return Err(e); }, 
-            Ok(val) => { output.push(val); },
-        }
-    }
-
-    Ok(output)
-}
-
-fn string_to_code(code_str: &str) -> Vec<src::VALUE> {
-    code_str
-        .trim()
-        .split(',')
-        .map(|x| str::parse(x).unwrap())
-        .collect()
-}
+use crate::{
+    execute,
+    string_to_code,
+};
 
 
 pub mod day17 {

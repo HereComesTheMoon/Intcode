@@ -6,6 +6,24 @@ mod src;
 pub mod days;
 
 fn main() {
+    let code = vec![3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99];
+
+    let mut pc = src::Interpreter::new(code.to_owned(), vec![].into());
+
+    loop {
+        let res = pc.step_loop();
+        match res {
+            Ok(val) => println!("{}", val),
+            Err(src::InterpreterError::NoInputError) => { pc.input_buffer.push_back(read_input()) },
+            Err(src::InterpreterError::Terminated) => { break; },
+            Err(e) => {
+                println!("Error! {:?}", e);
+                println!("{:?}", pc);
+                break;
+            }
+        }
+    }
+
     //days::day17::camera();
     
     //days::day15::day15b();
@@ -25,6 +43,22 @@ fn main() {
 
     //days::day5::day5a();
     //days::day5::day5b();
+}
+
+fn read_input() -> src::VALUE {
+    loop {
+        println!("Input buffer empty. Use stdin. Waiting for input: ");
+
+        let mut input = String::new();
+        if let Err(e) = std::io::stdin().read_line(&mut input) {
+            println!("Error: Interpreter failed to read input: {}", e);
+            panic!()
+        } 
+
+        if let Ok(num) = input.trim().parse::<src::VALUE>() {
+            return num
+        }
+    }
 }
 
 fn execute(data: Vec<src::VALUE>, input_buffer: VecDeque<src::VALUE>) -> Result<Vec<src::VALUE>, src::InterpreterError> {
