@@ -8,7 +8,9 @@ use num_complex::Complex;
 mod src;
 
 fn main() {
-    day17::camera();
+    let mut game = day13::Game::new();
+    game.day13b();
+    //day15::day15b();
 }
 
 mod day17 {
@@ -185,7 +187,6 @@ mod day15 {
         println!("Distance to oxygen generator: {}", dist);
 
         // Reset game:
-        println!("{}", "Penis");
         game.grid = [[(Tile::Unknown, 0usize); SIZE.0]; SIZE.1];
         let dist = game.dfs_b();
         println!("Maximal distance from oxygen generator: {}", dist);
@@ -223,7 +224,7 @@ mod day15 {
 }
 
 mod day13 {
-    use std::process::exit;
+    use std::{process::exit, time::Duration};
 
     use super::*;
 
@@ -287,6 +288,7 @@ mod day13 {
         pub fn day13b(&mut self) {
             loop {
                 let res = self.pc.step_loop();
+                //std::thread::sleep(Duration::new(0, 1_000_000));
 
                 let posx = match res {
                     Err(src::InterpreterError::NoInputError) => { 
@@ -746,7 +748,19 @@ mod tests {
     fn wrong_code() {
         let mut pc = Interpreter::new(vec![-1, 0, 99], [].into());
 
-        pc.step();
+        let e = pc.step();
+        assert_eq!(e, Err(InterpreterError::InvalidOpCode));
+
+        for op in [11301, 13101, 31101, 1_11101, 700001, 10001] {
+            println!("{}", op);
+            let mut pc = Interpreter::new(vec![op, 0, 99], [].into());
+            let e = pc.step();
+            assert_eq!(e, Err(InterpreterError::InvalidParameters));
+        }
+
+        let mut pc = Interpreter::new(vec![1101, 99, 99, 99], [].into());
+        let e = pc.step();
+        assert_eq!(e, Err(InterpreterError::InvalidParameters));
     }
 
     #[test]
@@ -767,6 +781,7 @@ mod tests {
 
         assert_eq!(err, InterpreterError::Terminated);
     }
+
 
     #[test]
     #[ignore = "This is more of a benchmark. Disabled to cut down on waiting time."]

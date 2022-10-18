@@ -10,6 +10,7 @@ pub enum InterpreterError {
     Terminated,
     NoInputError,
     InvalidOpCode,
+    InvalidParameters,
     Overflow,
     JumpOutOfBounds,
     OutOfMemory,
@@ -25,6 +26,7 @@ impl Display for InterpreterError {
             InterpreterError::Overflow => write!(f, "Overflow"),
             InterpreterError::JumpOutOfBounds => write!(f, "Jump out of bounds"),
             InterpreterError::OutOfMemory => write!(f, "Jump out of bounds"),
+            InterpreterError::InvalidParameters => write!(f, "Invalid parameters"),
         }
     }
 }
@@ -90,21 +92,49 @@ impl Interpreter {
         }
         self.last_output = None;
 
-        let next_code = self.code[self.ip];
+        let next_code = match self.code.get(self.ip) {
+            None => return Err(InterpreterError::OutOfMemory),
+            Some(val) => val,
+        };
+
+        // Ensures that an opcode 0 is an error, distinguishes from 99
+        if next_code % 100 == 0 {
+            return Err(InterpreterError::InvalidOpCode);
+        }
 
         let next_instruction = match OPCODES.get(((next_code % 100) % 99) as usize) {
             None => return Err(InterpreterError::InvalidOpCode),
             Some(val) => val,
         };
 
+        let mut wrong_parameters = false;
+
         self.param_indices = (0..next_instruction.number_parameters)
             .map(|k| match (next_code / 10i64.pow(2+k as u32)) % 10 {
                 0 => { self.code[self.ip + 1 + k] as usize },
                 1 => { self.ip + 1 + k },
                 2 => { (self.relative_base + self.code[self.ip + 1 + k] as isize) as usize },
-                _ => unreachable!(),
+                _ => { wrong_parameters = true; 0 }
             })
             .collect();
+
+        if wrong_parameters {
+            return Err(InterpreterError::InvalidParameters);
+        }
+
+        if next_code / 10i64.pow(2+next_instruction.number_parameters as u32) != 0 {
+            return Err(InterpreterError::InvalidParameters);
+        }
+
+        // immediate mode, never to be used for writing
+        if next_code / 10i64.pow(4) == 1 {
+            return Err(InterpreterError::InvalidParameters);
+        }
+
+        if self.param_indices.iter().any(|x| !(0..self.code.len()).contains(x)) {
+            return Err(InterpreterError::InvalidParameters);
+        }
+
 
         if let Some(e) = (next_instruction.func)(self) {
             Err(e)
