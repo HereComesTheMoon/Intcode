@@ -7,6 +7,32 @@ use num_complex::Complex;
 
 use crate::src;
 
+fn execute(data: Vec<src::VALUE>, input_buffer: VecDeque<src::VALUE>) -> Result<Vec<src::VALUE>, src::InterpreterError> {
+    let mut pc = Interpreter::new(data.to_owned(), input_buffer);
+    let mut output = vec![];
+
+    loop {
+        let res = pc.step_loop();
+
+        match res {
+            Err(src::InterpreterError::Terminated) => {break},
+            Err(e) => { return Err(e); }, 
+            Ok(val) => { output.push(val); },
+        }
+    }
+
+    Ok(output)
+}
+
+fn string_to_code(code_str: &str) -> Vec<src::VALUE> {
+    code_str
+        .trim()
+        .split(',')
+        .map(|x| str::parse(x).unwrap())
+        .collect()
+}
+
+
 pub mod day17 {
     use super::*;
     pub fn camera() {
@@ -175,13 +201,14 @@ pub mod day15 {
 
     }
 
-    pub fn day15a() {
+    pub fn day15a() -> src::VALUE {
         let mut game = Game::new();
         let dist = game.dfs().unwrap();
         println!("Distance to oxygen generator: {}", dist);
+        dist as src::VALUE
     }
 
-    pub fn day15b() {
+    pub fn day15b() -> src::VALUE {
         let mut game = Game::new();
         let dist = game.dfs().unwrap();
         println!("Distance to oxygen generator: {}", dist);
@@ -190,6 +217,7 @@ pub mod day15 {
         game.grid = [[(Tile::Unknown, 0usize); SIZE.0]; SIZE.1];
         let dist = game.dfs_b();
         println!("Maximal distance from oxygen generator: {}", dist);
+        dist as src::VALUE
     }
 
 
@@ -398,14 +426,16 @@ pub mod day13 {
         }
     }
 
-    pub fn day13a() {
+    pub fn day13a() -> src::VALUE {
         let game = Game::new();
         print!("{}", game);
+        return game.number_blocks as src::VALUE;
     }
 
-    pub fn day13b() {
+    pub fn day13b() -> src::VALUE {
         let mut game = Game::new();
         game.solve();
+        game.score
     }
 
 
@@ -413,7 +443,7 @@ pub mod day13 {
 
 pub mod day11 {
     use super::*;
-    pub fn day11a() {
+    pub fn day11a() -> src::VALUE {
         let data = string_to_code(include_str!("../data/day11.txt"));
 
         let mut pos: Complex<i64> = Complex::new(0, 0);
@@ -443,10 +473,11 @@ pub mod day11 {
         }
 
         println!("Number of tiles painted at least once: {}", tiles.len());
+        tiles.len() as src::VALUE
         // 2418, correct!
     }
 
-    pub fn day11b() {
+    pub fn day11b() -> src::VALUE {
         let data = string_to_code(include_str!("../data/day11.txt"));
 
         let mut pos: Complex<i64> = Complex::new(0, 0);
@@ -495,32 +526,175 @@ pub mod day11 {
             }
             println!();
         }
+        -1
     }
 }
 
+pub mod day9 {
+    use super::*;
 
-fn execute(data: Vec<src::VALUE>, input_buffer: VecDeque<src::VALUE>) -> Result<Vec<src::VALUE>, src::InterpreterError> {
-    let mut pc = Interpreter::new(data.to_owned(), input_buffer);
-    let mut output = vec![];
+    pub fn day9a() -> src::VALUE {
+        let result = execute(string_to_code(include_str!("../data/day9.txt")), vec![1].into()).unwrap()[0];
 
-    loop {
-        let res = pc.step_loop();
+        println!("Result / BOOST Keycode: {}", result);
+        result
+    }
 
-        match res {
-            Err(src::InterpreterError::Terminated) => {break},
-            Err(e) => { return Err(e); }, 
-            Ok(val) => { output.push(val); },
+    pub fn day9b() -> src::VALUE {
+        let result = execute(string_to_code(include_str!("../data/day9.txt")), vec![2].into()).unwrap()[0];
+
+        println!("Result / Coordinates of distress signal: {}", result);
+        result
+    }
+}
+
+pub mod day7 {
+    use super::*;
+    use itertools::Itertools;
+
+    pub fn day7a() -> src::VALUE {
+        let data7: Vec<_> = string_to_code(include_str!("../data/day7.txt"));
+
+        let mut signal_strength = 0;
+
+        for inputs in (0..=4).permutations(5) {
+            let mut a1 = Interpreter::new(data7.to_owned(), vec![inputs[0], 0].into());
+            let res1 = a1.step_loop().unwrap();
+
+            let mut a2 = Interpreter::new(data7.to_owned(), vec![inputs[1], res1].into());
+            let res2 = a2.step_loop().unwrap();
+
+            let mut a3 = Interpreter::new(data7.to_owned(), vec![inputs[2], res2].into());
+            let res3 = a3.step_loop().unwrap();
+
+            let mut a4 = Interpreter::new(data7.to_owned(), vec![inputs[3], res3].into());
+            let res4 = a4.step_loop().unwrap();
+
+            let mut a5 = Interpreter::new(data7.to_owned(), vec![inputs[4], res4].into());
+            let res5 = a5.step_loop().unwrap();
+
+            signal_strength = signal_strength.max(res5);
         }
+
+        println!("Result / Highest signal: {}", signal_strength);
+        signal_strength
     }
 
-    Ok(output)
+    pub fn day7b() -> src::VALUE {
+        let data7: Vec<_> = string_to_code(include_str!("../data/day7.txt"));
+
+        let mut signal_strength = 0;
+
+        for inputs in (5..=9).permutations(5) {
+            let mut a1 = Interpreter::new(data7.to_owned(), vec![inputs[0], 0].into());
+            let mut a2 = Interpreter::new(data7.to_owned(), vec![inputs[1]].into());
+            let mut a3 = Interpreter::new(data7.to_owned(), vec![inputs[2]].into());
+            let mut a4 = Interpreter::new(data7.to_owned(), vec![inputs[3]].into());
+            let mut a5 = Interpreter::new(data7.to_owned(), vec![inputs[4]].into());
+
+
+            loop {
+                let res1 = match a1.step_loop() {
+                    Ok(res) => { res },
+                    Err(src::InterpreterError::Terminated) => { 
+                        // Once the first amplifier terminates, all the amplifiers will terminate
+                        a2.step_loop().unwrap_err();
+                        a3.step_loop().unwrap_err();
+                        a4.step_loop().unwrap_err();
+                        signal_strength = signal_strength.max(a5.last_output.unwrap());
+                        a5.step_loop().unwrap_err();
+                        break
+                    },
+                    _ => { panic!() },
+                };
+
+                a2.input_buffer.push_back(res1);
+                let res2 = a2.step_loop().unwrap();
+                a3.input_buffer.push_back(res2);
+                let res3 = a3.step_loop().unwrap();
+                a4.input_buffer.push_back(res3);
+                let res4 = a4.step_loop().unwrap();
+                a5.input_buffer.push_back(res4);
+                let res5 = a5.step_loop().unwrap();
+                a1.input_buffer.push_back(res5);
+            }
+        }
+        println!("Result / Highest signal: {}", signal_strength);
+        signal_strength
+    }
 }
 
-fn string_to_code(code_str: &str) -> Vec<src::VALUE> {
-    code_str
-        .trim()
-        .split(',')
-        .map(|x| str::parse(x).unwrap())
-        .collect()
+pub mod day5 {
+    use super::*;
+
+    pub fn day5a() -> src::VALUE {
+        let result = execute(string_to_code(include_str!("../data/day5.txt")), vec![1].into()).unwrap()[9];
+
+        println!("Result: {}", result);
+        result
+    }
+
+    pub fn day5b() -> src::VALUE {
+        let result = execute(string_to_code(include_str!("../data/day5.txt")), vec![5].into()).unwrap()[0];
+
+        println!("Result: {}", result);
+        result
+    }
 }
 
+pub mod day2 {
+    //use super::*;
+
+    // First AoC Intcode challenge. Requires Interpreter.code to be public, hence doesn't compile now. Otherwise passes.
+    //#[test]
+    //fn day2a() {
+        //let mut data2: Vec<_> = string_to_code(include_str!("../data/day2.txt"));
+
+        //data2[1] = 12;
+        //data2[2] = 2;
+
+        //let mut pc = Interpreter::new(data2, vec![].into());
+
+        //let res = pc.step_loop();
+
+        //if let Err(src::InterpreterError::Terminated) = res {
+        //} else {
+            //assert!(false);
+        //}
+
+        //assert_eq!(pc.code[0], DAY2A_RESULT);
+    //}
+
+    // Second AoC Intcode challenge. Requires Interpreter.code to be public, hence doesn't compile now. Otherwise passes.
+    //#[test]
+    //fn day2b() {
+        //let data2: Vec<_> = string_to_code(include_str!("../data/day2.txt"));
+
+        //let target = 19690720;
+
+        //for noun in 0..=99 {
+            //for verb in 0..=99 {
+                //let mut data = data2.to_owned();
+                //data[1] = noun;
+                //data[2] = verb;
+
+                //let mut pc = Interpreter::new(data, vec![].into());
+
+                //let res = pc.step_loop();
+
+                //if let Err(src::InterpreterError::Terminated) = res {
+                //} else {
+                    //assert!(false);
+                //}
+
+                //if pc.code[0] == target {
+                    //let result = 100*noun + verb;
+                    //assert_eq!(result, DAY2B_RESULT);
+                    //return
+                //}
+            //}
+        //}
+        //unreachable!()
+    //}
+
+}

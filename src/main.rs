@@ -1,9 +1,5 @@
 use src::Interpreter;
 use std::collections::VecDeque;
-//use std::collections::HashMap;
-//use std::fmt::Debug;
-//use std::fmt::Display;
-//use num_complex::Complex;
 
 mod src;
 
@@ -12,13 +8,23 @@ pub mod days;
 fn main() {
     //days::day17::camera();
     
-    days::day15::day15a();
+    //days::day15::day15b();
+    //days::day15::day15a();
 
     //days::day11::day11a();
     //days::day11::day11b();
 
     //days::day13::day13a();
     //days::day13::day13b();
+
+    //days::day9::day9a();
+    //days::day9::day9b();
+
+    //days::day7::day7a();
+    //days::day7::day7b();
+
+    //days::day5::day5a();
+    //days::day5::day5b();
 }
 
 fn execute(data: Vec<src::VALUE>, input_buffer: VecDeque<src::VALUE>) -> Result<Vec<src::VALUE>, src::InterpreterError> {
@@ -52,72 +58,14 @@ mod tests {
     use super::*;
     use src::{Interpreter, InterpreterError};
 
-    const DAY2A_RESULT: src::VALUE = 6087827;
-    const DAY2B_RESULT: src::VALUE = 5379;
+    //const DAY2A_RESULT: src::VALUE = 6087827;
+    //const DAY2B_RESULT: src::VALUE = 5379;
     const DAY5A_RESULT: src::VALUE = 5182797;
     const DAY5B_RESULT: src::VALUE = 12077198;
     const DAY7A_RESULT: src::VALUE = 77500;
     const DAY7B_RESULT: src::VALUE = 22476942;
     const DAY9A_RESULT: src::VALUE = 2406950601;
     const DAY9B_RESULT: src::VALUE = 83239;
-    use itertools::Itertools;
-
-        
-
-    // Solution AoC2019/Day2. Intcode challenge: 1
-    // First AoC Intcode challenge. Requires Interpreter.code to be public, hence doesn't compile now. Otherwise passes.
-    //#[test]
-    //fn day2a() {
-        //let mut data2: Vec<_> = string_to_code(include_str!("../data/day2.txt"));
-
-        //data2[1] = 12;
-        //data2[2] = 2;
-
-        //let mut pc = Interpreter::new(data2, vec![].into());
-
-        //let res = pc.step_loop();
-
-        //if let Err(src::InterpreterError::Terminated) = res {
-        //} else {
-            //assert!(false);
-        //}
-
-        //assert_eq!(pc.code[0], DAY2A_RESULT);
-    //}
-
-    // Solution AoC2019/Day2b. Intcode challenge: 2
-    // Second AoC Intcode challenge. Requires Interpreter.code to be public, hence doesn't compile now. Otherwise passes.
-    //#[test]
-    //fn day2b() {
-        //let data2: Vec<_> = string_to_code(include_str!("../data/day2.txt"));
-
-        //let target = 19690720;
-
-        //for noun in 0..=99 {
-            //for verb in 0..=99 {
-                //let mut data = data2.to_owned();
-                //data[1] = noun;
-                //data[2] = verb;
-
-                //let mut pc = Interpreter::new(data, vec![].into());
-
-                //let res = pc.step_loop();
-
-                //if let Err(src::InterpreterError::Terminated) = res {
-                //} else {
-                    //assert!(false);
-                //}
-
-                //if pc.code[0] == target {
-                    //let result = 100*noun + verb;
-                    //assert_eq!(result, DAY2B_RESULT);
-                    //return
-                //}
-            //}
-        //}
-        //unreachable!()
-    //}
-
 
     #[test]
     fn day5a() {
@@ -132,11 +80,7 @@ mod tests {
 
     #[test]
     fn day5b() {
-        let wanted = vec![DAY5B_RESULT];
-
-        let given = execute(string_to_code(include_str!("../data/day5.txt")), vec![5].into()).unwrap();
-
-        assert_eq!(wanted, given);
+        assert_eq!(DAY5B_RESULT, days::day5::day5b());
     }
 
     #[test]
@@ -196,82 +140,24 @@ mod tests {
 
     #[test]
     fn day7a() {
-        let data7: Vec<_> = string_to_code(include_str!("../data/day7.txt"));
-
-        let mut signal_strength = 0;
-
-        for inputs in (0..=4).permutations(5) {
-            let mut a1 = Interpreter::new(data7.to_owned(), vec![inputs[0], 0].into());
-            let res1 = a1.step_loop().unwrap();
-
-            let mut a2 = Interpreter::new(data7.to_owned(), vec![inputs[1], res1].into());
-            let res2 = a2.step_loop().unwrap();
-
-            let mut a3 = Interpreter::new(data7.to_owned(), vec![inputs[2], res2].into());
-            let res3 = a3.step_loop().unwrap();
-
-            let mut a4 = Interpreter::new(data7.to_owned(), vec![inputs[3], res3].into());
-            let res4 = a4.step_loop().unwrap();
-
-            let mut a5 = Interpreter::new(data7.to_owned(), vec![inputs[4], res4].into());
-            let res5 = a5.step_loop().unwrap();
-
-            signal_strength = signal_strength.max(res5);
-        }
-
-        assert_eq!(signal_strength, DAY7A_RESULT);
+        assert_eq!(days::day7::day7a(), DAY7A_RESULT);
     }
 
     #[test]
     fn day7b() {
-        let data7: Vec<_> = string_to_code(include_str!("../data/day7.txt"));
-
-        let mut signal_strength = 0;
-
-        for inputs in (5..=9).permutations(5) {
-            let mut a1 = Interpreter::new(data7.to_owned(), vec![inputs[0], 0].into());
-            let mut a2 = Interpreter::new(data7.to_owned(), vec![inputs[1]].into());
-            let mut a3 = Interpreter::new(data7.to_owned(), vec![inputs[2]].into());
-            let mut a4 = Interpreter::new(data7.to_owned(), vec![inputs[3]].into());
-            let mut a5 = Interpreter::new(data7.to_owned(), vec![inputs[4]].into());
-
-
-            loop {
-                let res1 = match a1.step_loop() {
-                    Ok(res) => { res },
-                    Err(src::InterpreterError::Terminated) => { 
-                        // Once the first amplifier terminates, all the amplifiers will terminate
-                        a2.step_loop().unwrap_err();
-                        a3.step_loop().unwrap_err();
-                        a4.step_loop().unwrap_err();
-                        signal_strength = signal_strength.max(a5.last_output.unwrap());
-                        a5.step_loop().unwrap_err();
-                        break
-                    },
-                    _ => { panic!() },
-                };
-
-                a2.input_buffer.push_back(res1);
-                let res2 = a2.step_loop().unwrap();
-                a3.input_buffer.push_back(res2);
-                let res3 = a3.step_loop().unwrap();
-                a4.input_buffer.push_back(res3);
-                let res4 = a4.step_loop().unwrap();
-                a5.input_buffer.push_back(res4);
-                let res5 = a5.step_loop().unwrap();
-                a1.input_buffer.push_back(res5);
-            }
-        }
-        assert_eq!(signal_strength, DAY7B_RESULT);
+        assert_eq!(days::day7::day7b(), DAY7B_RESULT);
     }
 
     #[test]
     fn day9a() {
-        let wanted = vec![DAY9A_RESULT];
+        let result = days::day9::day9a();
+        assert_eq!(DAY9A_RESULT, result);
+    }
 
-        let given = execute(string_to_code(include_str!("../data/day9.txt")), vec![1].into()).unwrap();
-
-        assert_eq!(wanted, given);
+    #[test]
+    #[ignore = "This is more of a benchmark. Disabled to cut down on waiting time."]
+    fn day9b() {
+        assert_eq!(DAY9B_RESULT, days::day9::day9b());
     }
 
     #[test]
@@ -312,15 +198,5 @@ mod tests {
         assert_eq!(err, InterpreterError::Terminated);
     }
 
-
-    #[test]
-    #[ignore = "This is more of a benchmark. Disabled to cut down on waiting time."]
-    fn day9b() {
-        let wanted = vec![DAY9B_RESULT];
-
-        let given = execute(string_to_code(include_str!("../data/day9.txt")), vec![2].into()).unwrap();
-
-        assert_eq!(wanted, given);
-    }
 
 }
